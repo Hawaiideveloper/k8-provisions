@@ -21,5 +21,13 @@ mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
+# Installs the calico manifest file to install
+# package for networking into cluster
+kubectl apply -f https://doc.projectcalico.org/manifest/calico.yaml
+
+# Generates a new token and displays the full kubeadm join command, 
+# which is used to add worker nodes to the Kubernetes cluster
+kubeadm token create --print-join-command
 
 
+echo see the command above for worker nodes
