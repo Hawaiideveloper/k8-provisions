@@ -4,7 +4,7 @@
 # Author: Hawaiideveloper
 # Date: 2024-11-03
 # Version: 1.0
-# Usage: ./script_name.sh [arguments]
+# Usage: ./setup-k8-general
 # Notes: Additional details, if any
 
 # The hostnamectl command only allows a single argument for the hostname
