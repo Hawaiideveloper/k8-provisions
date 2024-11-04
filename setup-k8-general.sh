@@ -1,3 +1,12 @@
+#!/bin/bash
+
+# Description: set up the general installer
+# Author: Hawaiideveloper
+# Date: 2024-11-03
+# Version: 1.0
+# Usage: ./script_name.sh [arguments]
+# Notes: Additional details, if any
+
 # The hostnamectl command only allows a single argument for the hostname
 sudo hostnamectl set-hostname k8s-control
 
