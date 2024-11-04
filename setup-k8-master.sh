@@ -21,3 +21,18 @@ sudo modprobe overlay
 # essential for enabling certain network filtering
 # enables network traffic on Linux bridges to be filtered using iptables
 sudo modprobe br_netfilter
+
+# creates a system configuration file to enable specific network settings
+# Ensures that bridged network traffic 
+#(traffic passing through Linux bridges) is processed by iptables
+# Enables IPv4 packet forwarding, allowing 
+# the system to forward packets between network interfaces
+# Ensures that IPv6 traffic passing through 
+# Linux bridges is processed by ip6tables
+
+cat << EOF | sudo tee /etc/sysctl.d/99-kubernetes-cri.conf
+net.bridge.bridge-nf-call-iptables = 1
+net.ipv4.ip_forward = 1
+net.bridge.bridge-nf-call-ip6tables =1 
+EOF
+
