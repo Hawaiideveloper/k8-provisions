@@ -5,8 +5,7 @@
 # Date: 2024-11-03
 # Version: 1.0
 # Usage: ./setup-k8-general
-# Notes: Additional details, if any
-
+# Notes: Use Ubuntu 22.04.3
 # The hostnamectl command only allows a single argument for the hostname
 sudo hostnamectl set-hostname k8s-control
 
@@ -92,10 +91,16 @@ echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.
 # Take in the changes
 sudo apt-get update
 
-# Install kubeadm to version 1.27.0-00
-sudo apt-get install -y kubelet=1.27.0-00 kubeadm=1.27.0-00 kubectl=1.27.0-00
+# Install kubeadm to version 1.31.2-1.1
+sudo apt-get install -y kubelet=1.31.2-1.1 kubeadm=1.31.2-1.1 kubectl=1.31.2-1.1
 
-# Locks version to 1.27
+# Verify version insrtalled
+kubelet --version
+kubeadm version
+kubectl version --client
+
+
+# Locks version to 1.31.2-1.1
 sudo apt-mark hold kubelet kubeadm kubectl
 
 
