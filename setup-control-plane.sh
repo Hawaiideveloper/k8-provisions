@@ -30,4 +30,4 @@ kubectl apply -f https://doc.projectcalico.org/manifest/calico.yaml
 kubeadm token create --print-join-command
 
 
-echo see the command above for worker nodes
+echo "see the command above for worker nodes"
