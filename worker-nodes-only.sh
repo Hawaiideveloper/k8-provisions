@@ -12,3 +12,5 @@
 
 echo "please see token generated using the below comand on the control plane server"
 echo "kubeadm token create --print-join-command"
+
+echo "Look at README.md for the example https://github.com/Hawaiideveloper/k8-provisions/blob/main/README.md"
