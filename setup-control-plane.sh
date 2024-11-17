@@ -50,5 +50,19 @@ EOF
 
 sudo netplan apply
 
+
+# Backup the original /etc/fstab file
+sudo cp /etc/fstab /etc/fstab.bak
+
+# Comment out the swap entry in /etc/fstab
+sudo sed -i '/swap/s/^/#/' /etc/fstab
+
+# Disable swap immediately for the current session
+sudo swapoff -a
+
+# Confirm changes
+echo "Swap has been disabled and /etc/fstab updated."
+
+
 echo "Kubernetes control plane setup complete."
 echo "See the kubeadm join command above to add worker nodes."
