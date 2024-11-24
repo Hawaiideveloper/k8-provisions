@@ -124,3 +124,20 @@ echo "Swap has been disabled and /etc/fstab updated."
 
 echo "Kubernetes control plane setup complete."
 echo "See the kubeadm join command above to add worker nodes."
+
+
+
+
+# If problems arise uncomment commands below:
+
+
+# Check if the control plane was ever successfully initialized:
+# sudo kubeadm reset
+
+# Reinitialize the Kubernetes control plane:
+# This command will:
+
+# Generate the missing manifests, including kube-apiserver.yaml.
+# Start the control plane components (kube-apiserver, kube-controller-manager, kube-scheduler, etc.).
+# sudo kubeadm init --apiserver-advertise-address=172.100.55.10 --pod-network-cidr=192.168.0.0/16
+
