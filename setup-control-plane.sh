@@ -141,3 +141,27 @@ echo "See the kubeadm join command above to add worker nodes."
 # Start the control plane components (kube-apiserver, kube-controller-manager, kube-scheduler, etc.).
 # sudo kubeadm init --apiserver-advertise-address=172.100.55.10 --pod-network-cidr=192.168.0.0/16
 
+
+# If things go right you should see something like similar below:
+
+
+# Your Kubernetes control-plane has initialized successfully!
+
+# To start using your cluster, you need to run the following as a regular user:
+
+#   mkdir -p $HOME/.kube
+#   sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+#   sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+# Alternatively, if you are the root user, you can run:
+
+#   export KUBECONFIG=/etc/kubernetes/admin.conf
+
+# You should now deploy a pod network to the cluster.
+# Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
+#   https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+# Then you can join any number of worker nodes by running the following on each as root:
+
+# kubeadm join 172.100.55.10:6443 --token bat9gc.ac5gu50icmp8bmts \
+# 	--discovery-token-ca-cert-hash sha256:35a8c92dd45000b1a460f4398ef6eec4cca7f52624268eb6f6a8d79845aa9579 
