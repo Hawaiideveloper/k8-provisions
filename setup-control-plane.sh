@@ -17,6 +17,10 @@ fi
 
 echo "Detected network adapter: $ADAPTER"
 
+# Add pod sandbox env
+sudo ctr --namespace k8s.io images pull registry.k8s.io/pause:3.10
+
+
 # Initializes a Kubernetes control plane node with specific settings
 sudo kubeadm init --pod-network-cidr 192.168.0.0/16 --kubernetes-version v1.31.2
 
@@ -47,6 +51,8 @@ network:
           - 192.168.1.1
           - 8.8.8.8
 EOF
+
+sudo chmod 600 /etc/netplan/*.yaml
 
 sudo netplan apply
 
