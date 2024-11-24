@@ -17,6 +17,64 @@ fi
 
 echo "Detected network adapter: $ADAPTER"
 
+# explicitly set the runtime endpoint for crictl
+sudo crictl --runtime-endpoint unix:///run/containerd/containerd.sock ps | grep kube-apiserver
+
+
+# Description: Automate creation of crictl.yaml for runtime endpoint configuration
+# Author: Hawaiideveloper
+# Date: 2024-11-24
+# Version: 1.0
+# Usage: sudo ./setup-crictl-config.sh
+
+# Define the default runtime endpoints for common container runtimes
+CONTAINERD_ENDPOINT="unix:///run/containerd/containerd.sock"
+CRI_O_ENDPOINT="unix:///run/crio/crio.sock"
+CRI_DOCKERD_ENDPOINT="unix:///var/run/cri-dockerd.sock"
+
+# Check if the runtime is containerd, cri-o, or cri-dockerd
+if pgrep -x "containerd" > /dev/null; then
+    RUNTIME_ENDPOINT=$CONTAINERD_ENDPOINT
+    RUNTIME_NAME="containerd"
+elif pgrep -x "crio" > /dev/null; then
+    RUNTIME_ENDPOINT=$CRI_O_ENDPOINT
+    RUNTIME_NAME="cri-o"
+elif pgrep -x "dockerd" > /dev/null; then
+    RUNTIME_ENDPOINT=$CRI_DOCKERD_ENDPOINT
+    RUNTIME_NAME="cri-dockerd"
+else
+    echo "No supported container runtime detected. Please ensure containerd, cri-o, or cri-dockerd is installed and running."
+    exit 1
+fi
+
+# Create or update the crictl.yaml configuration file
+CONFIG_FILE="/etc/crictl.yaml"
+
+echo "Setting up crictl.yaml for $RUNTIME_NAME runtime at $RUNTIME_ENDPOINT..."
+
+sudo mkdir -p /etc
+sudo tee $CONFIG_FILE > /dev/null <<EOF
+runtime-endpoint: $RUNTIME_ENDPOINT
+image-endpoint: $RUNTIME_ENDPOINT
+EOF
+
+# Set correct permissions
+sudo chmod 644 $CONFIG_FILE
+
+echo "Configuration completed. Runtime: $RUNTIME_NAME, Endpoint: $RUNTIME_ENDPOINT"
+echo "You can verify with: crictl ps"
+
+
+
+
+
+
+
+
+
+
+
+
 # Initializes a Kubernetes control plane node with specific settings
 sudo kubeadm init --pod-network-cidr 192.168.0.0/16 --kubernetes-version v1.31.2
 
