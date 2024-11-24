@@ -164,4 +164,4 @@ echo "See the kubeadm join command above to add worker nodes."
 # Then you can join any number of worker nodes by running the following on each as root:
 
 # kubeadm join 172.100.55.10:6443 --token bat9gc.ac5gu50icmp8bmts \
-# 	--discovery-token-ca-cert-hash sha256:35a8c92dd45000b1a460f4398ef6eec4cca7f52624268eb6f6a8d79845aa9579 
+# 	--discovery-token-ca-cert-hash sha256:35a8c92dd45000b1a460f43
