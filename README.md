@@ -27,7 +27,8 @@ If you want to do this and not spend hours manually repeating yourself come to t
 
 ### Run this on the worker nodes:
 
-```ansible-playbook --key-file ~/.ssh/kube_rsa -i inventory  playbooks/k8s/workers.yml```
+```bash
+ansible-playbook --key-file ~/.ssh/kube_rsa -i inventory  playbooks/k8s/workers.yml```
 
 
 ### Summary:
