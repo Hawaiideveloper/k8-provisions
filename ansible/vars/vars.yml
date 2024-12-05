@@ -1,0 +1,13 @@
+# vars.yml
+
+kubelet_version: "1.20.1-00"
+kubeadm_version: "1.20.1-00"
+kubectl_version: "1.20.1-00"
+
+containerd_conf_path: "/etc/containerd/config.toml"
+modules_conf_path: "/etc/modules-load.d/containerd.conf"
+sysctl_conf_path: "/etc/sysctl.d/99-kubernetes-cri.conf"
+kubernetes_repo_path: "/etc/apt/sources.list.d/kubernetes.list"
+
+pod_network_cidr: "192.168.0.0/16"
+service_cidr: "10.96.0.0/12"
