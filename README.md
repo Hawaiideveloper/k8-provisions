@@ -10,28 +10,24 @@ If you want to do this and not spend hours manually repeating yourself come to t
 
 ### Test communication to each device using:
 
-```bash
-ansible --key-file ~/.ssh/kube_rsa -i inventory all -m ping```
+```ansible --key-file ~/.ssh/kube_rsa -i inventory all -m ping```
 
 
 
 ### Run your playbook on all nodes
 
 
-```bash
-ansible-playbook --key-file ~/.ssh/kube_rsa -i inventory  ansible/k8s-install.yml```
+```ansible-playbook --key-file ~/.ssh/kube_rsa -i inventory  ansible/k8s-install.yml```
 
 
 ### Run this on the master
-```bash
-ansible-playbook --key-file ~/.ssh/kube_rsa -i inventory  ansible/master.yml```
+```ansible-playbook --key-file ~/.ssh/kube_rsa -i inventory  ansible/master.yml```
 
 
 
 ### Run this on the worker nodes:
 
-```bash 
-ansible-playbook --key-file ~/.ssh/kube_rsa -i inventory  playbooks/k8s/workers.yml```
+```ansible-playbook --key-file ~/.ssh/kube_rsa -i inventory  playbooks/k8s/workers.yml```
 
 
 ### Summary:
