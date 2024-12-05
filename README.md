@@ -181,3 +181,7 @@ If you decide to use a `vars.yml` file, you’ll need to modify the playbook to 
 - **Reusability**: You can reuse the playbook for different setups by simply modifying the `vars.yml` file.
 - **Maintainability**: It’s easier to manage configurations without hunting for hardcoded values in the playbook.
 - **Scalability**: Supports multiple environments (e.g., dev, test, prod) with different configurations using separate `vars.yml` files.
+
+
+
+credit to the AI and https://opensourcegeeks.net/how-to-automate-a-kubernetes-cluster-setup-with-ansible/?utm_source=chatgpt.com
