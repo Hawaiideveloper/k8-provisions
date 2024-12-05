@@ -65,7 +65,7 @@
       blockinfile:
         path: "{{ kubernetes_repo_path }}"
         block: |
-              deb https://apt.kubernetes.io/ kubernetes-xenial main
+              deb https://apt.kubernetes.io/ "{{ apt_kubernetes }}" main
 
     - name: Install kubernetes
       shell: |

@@ -4,7 +4,12 @@ I am deciding to move to a branch called ansible_way
 Originally wrote for Ubuntu 16.04 LTS:
 The kubernetes-xenial repository is designed for Ubuntu 16.04 LTS, which is also known by the codename Xenial Xerus.
 
-
+This repo is designed to work for multiple Ubuntu versions, despite its name (xenial). It is valid for:
+Ubuntu 16.04 (Xenial)
+Ubuntu 18.04 (Bionic)
+Ubuntu 20.04 (Focal)
+Ubuntu 22.04 (Jammy)
+The key is that the kubernetes-xenial repository supports multiple Ubuntu LTS versions.
 
 If you want to do this and not spend hours manually repeating yourself come to that branch
 

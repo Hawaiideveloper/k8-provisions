@@ -11,3 +11,6 @@ kubernetes_repo_path: "/etc/apt/sources.list.d/kubernetes.list"
 
 pod_network_cidr: "192.168.0.0/16"
 service_cidr: "10.96.0.0/12"
+
+
+apt_kubernetes: "kubernetes-xenial"
