@@ -1,0 +1,59 @@
+---
+- hosts: k8s-master
+  become: yes
+  vars_files:
+    - ../../vars.yml
+  tasks:
+    - name: Initialize k8s cluster
+      shell: kubeadm init --pod-network-cidr=10.244.0.0/16
+      args:
+        chdir: $HOME
+        creates: cluster_initialized.txt
+
+    - name: Set firewall rules UFW
+      become: yes
+      ansible.builtin.shell:  |
+          sudo ufw allow 6443/tcp
+          sudo ufw allow 2379/tcp
+          sudo ufw allow 2380/tcp
+          sudo ufw allow 10250/tcp
+          sudo ufw allow 10251/tcp
+          sudo ufw allow 10252/tcp
+          sudo ufw allow 10255/tcp
+          sudo ufw reload
+
+    - name: Create .kube directory
+      become_user: kube
+      become: yes
+      ansible.builtin.file:
+        path: $HOME/.kube
+        state: directory
+        mode: '0755'
+
+    - name: Copy admin.conf to user kube config
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: /home/kube/.kube/config
+        remote_src: yes
+        owner: kube
+
+    - name: Install Pod network
+      become: yes
+      become_user: kube
+      shell: kubectl apply -f https://github.com/coreos/flannel/raw/master/Documentation/kube-flannel.yml
+      args:
+        chdir: $HOME
+        
+    - name: Get token to join worker nodes to k8s cluster
+      become: yes
+      become_user: kube
+      ansible.builtin.shell: kubeadm token create  --print-join-command
+      register: kubernetes_join_command
+
+    - name: Display k8s join command
+      ansible.builtin.debug:
+        msg: "{{ kubernetes_join_command.stdout }}"
+
+    - name: Copy join command to local file on Ansible host
+      become: yes
+      local_action: copy content="{{ kubernetes_join_command.stdout_lines[0] }}" dest="/tmp/kubernetes_join_command" mode=0777

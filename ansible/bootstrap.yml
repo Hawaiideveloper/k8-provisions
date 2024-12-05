@@ -1,0 +1,9 @@
+---
+- name: Install kubernetes
+  import_playbook: k8s-install.yml
+
+- name: Bootstrap master node
+  import_playbook: master.yml
+
+- name: Join worker nodes to kube cluster
+  import_playbook: workers.yml

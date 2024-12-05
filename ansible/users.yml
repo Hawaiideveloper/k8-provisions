@@ -1,0 +1,19 @@
+- hosts: k8s-master, k8s-workers
+  become: yes
+  become_user: root
+  vars_files:
+    - ../../vars.yml
+  tasks:
+    - name: Create the kube user
+      user: name=kube append=yes state=present createhome=yes shell=/bin/bash
+
+    - name: Add kube user to sudo profiles and enable no password
+      lineinfile:
+        dest: /etc/sudoers
+        line: 'kube ALL=(ALL) NOPASSWD: ALL'
+        validate: 'visudo -cf %s'
+
+    - name: Set ssh key for kube user
+      authorized_key: user=kube key="{{item}}"
+      with_file:
+        - ~/.ssh/kube_rsa.pub

@@ -1,0 +1,29 @@
+---
+- hosts: k8s-workers
+  become: yes
+  gather_facts: yes
+  vars_files:
+    - ../../vars.yml
+  tasks:
+    - name: Set firewall rules UFW
+      become: yes
+      ansible.builtin.shell:  |
+          sudo ufw allow 10251/tcp
+          sudo ufw allow 10255/tcp
+          sudo ufw reload
+
+    - name: Copy join command from Ansible host to the worker nodes.
+      become: yes
+      copy:
+        src: /tmp/kubernetes_join_command
+        dest: /tmp/kubernetes_join_command
+        mode: 0777
+
+    - name: Join the Worker nodes to the cluster.
+      become: yes
+      command: sh /tmp/kubernetes_join_command
+      register: joined_or_not
+
+    - name: Node join status
+      ansible.builtin.debug:
+        msg: "{{ joined_or_not.stdout }}"
