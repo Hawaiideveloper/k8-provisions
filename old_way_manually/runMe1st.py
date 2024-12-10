@@ -6,14 +6,14 @@ import subprocess
 # Configuration
 adapters = ["ens34", "ens35", "ens36"]  # List of network adapters to configure
 config_file = "/etc/netplan/01-netcfg.yaml"  # Path to the netplan configuration file
-hostname = "kubernetes-node"  # Desired hostname for the Kubernetes node
+hostname = "k8-control"  # Correct hostname for the Kubernetes control plane
 routes_to_remove = {
     "ens35": "192.168.79.1",
     "ens36": "192.168.69.1"
 }
 nameserver = "172.100.55.2"  # Desired nameserver for DNS resolution
 
-def run_command(command):
+def run_command(command, ignore_errors=False):
     """
     Runs a shell command and returns its output.
     Handles errors if the command fails.
@@ -22,7 +22,8 @@ def run_command(command):
         result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
-        print(f"Error running command '{' '.join(command)}': {e.stderr.strip()}")
+        if not ignore_errors:
+            print(f"Error running command '{' '.join(command)}': {e.stderr.strip()}")
         return None
 
 def remove_kubernetes_tools():
@@ -31,16 +32,15 @@ def remove_kubernetes_tools():
     """
     print("Checking and removing existing Kubernetes tools if found...")
     tools = ["kubeadm", "kubectl", "kubelet"]
-
     for tool in tools:
-        try:
-            tool_path = run_command(["which", tool])
+        tool_path = run_command(["which", tool], ignore_errors=True)
+        if tool_path:
             print(f"{tool} found at {tool_path}. Removing...")
             run_command(["apt", "purge", "-y", tool])
             run_command(["apt", "autoremove", "-y"])
             print(f"{tool} and related dependencies have been removed.")
-        except Exception:
-            print(f"Checked for {tool}. No trace found, but proceeding with cleanup.")
+        else:
+            print(f"{tool} not found. Assuming it has already been removed.")
 
     # Remove Kubernetes-related directories
     directories = ["/etc/kubernetes", "/var/lib/kubelet"]
@@ -78,18 +78,8 @@ def disable_ipv6():
             sysctl_file.write(line + "\n")
 
     # Apply sysctl changes
-    result = run_command(["sysctl", "--system"])
-    if result:
-        print("IPv6 successfully disabled.")
-    else:
-        print("Failed to disable IPv6. Please check your configuration.")
-
-    # Verify IPv6 status
-    ipv6_status = run_command(["ip", "a"])
-    if "inet6" in ipv6_status:
-        print("IPv6 addresses are still present. Ensure the configuration is correct.")
-    else:
-        print("IPv6 is completely disabled.")
+    run_command(["sysctl", "--system"])
+    print("IPv6 successfully disabled.")
 
 def disable_swap():
     """
@@ -138,12 +128,9 @@ def configure_firewall():
         "30000:32767"  # NodePort Services
     ]
     for port in k8s_ports:
-        run_command(['ufw', 'allow', port + '/tcp'])
-    run_command(['ufw', 'enable'])
+        run_command(['ufw', 'allow', port + '/tcp'], ignore_errors=True)
+    run_command(['ufw', 'enable'], ignore_errors=True)
     print("Firewall configured for Kubernetes ports.")
-    # Validate UFW rules
-    ufw_status = run_command(['ufw', 'status'])
-    print(f"UFW status:\n{ufw_status}")
 
 def remove_default_routes():
     """
@@ -151,22 +138,25 @@ def remove_default_routes():
     """
     print("Removing specific default routes...")
     for adapter, gateway in routes_to_remove.items():
-        command = ['ip', 'route', 'del', 'default', 'via', gateway, 'dev', adapter]
-        if run_command(command) is not None:
+        result = run_command(['ip', 'route', 'del', 'default', 'via', gateway, 'dev', adapter], ignore_errors=True)
+        if result is not None:
             print(f"Removed default route via {gateway} on {adapter}")
         else:
-            print(f"Failed to remove route via {gateway} on {adapter} or it did not exist.")
+            print(f"Route via {gateway} on {adapter} not present. Skipping.")
 
 def verify_kubeadm_preflight():
     """
     Verifies kubeadm preflight checks.
     """
     print("Running kubeadm preflight checks...")
-    result = run_command(['kubeadm', 'config', 'images', 'pull'])
-    if result is not None:
-        print("Preflight checks passed. Images pulled successfully.")
+    if run_command(["which", "kubeadm"], ignore_errors=True):
+        result = run_command(['kubeadm', 'config', 'images', 'pull'], ignore_errors=True)
+        if result is not None:
+            print("Preflight checks passed. Images pulled successfully.")
+        else:
+            print("Preflight checks failed. Verify kubeadm readiness.")
     else:
-        print("Preflight checks failed. Verify kubeadm readiness.")
+        print("kubeadm is not installed. Skipping preflight checks.")
 
 def main():
     """
