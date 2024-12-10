@@ -6,7 +6,7 @@ import subprocess
 # Configuration
 adapters = ["ens34", "ens35", "ens36"]  # List of network adapters to configure
 config_file = "/etc/netplan/01-netcfg.yaml"  # Path to the netplan configuration file
-hostname = "k8-control"  # Correct hostname for the Kubernetes control plane
+hostname = "k8-controlplane"  # Correct hostname for the Kubernetes control plane
 routes_to_remove = {
     "ens35": "192.168.79.1",
     "ens36": "192.168.69.1"
