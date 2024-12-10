@@ -25,6 +25,32 @@ def run_command(command):
         print(f"Error running command '{' '.join(command)}': {e.stderr.strip()}")
         return None
 
+def remove_kubernetes_tools():
+    """
+    Checks for and removes existing Kubernetes tools (kubeadm, kubectl, kubelet).
+    """
+    print("Checking and removing existing Kubernetes tools if found...")
+    tools = ["kubeadm", "kubectl", "kubelet"]
+
+    for tool in tools:
+        try:
+            tool_path = run_command(["which", tool])
+            print(f"{tool} found at {tool_path}. Removing...")
+            run_command(["apt", "purge", "-y", tool])
+            run_command(["apt", "autoremove", "-y"])
+            print(f"{tool} and related dependencies have been removed.")
+        except Exception:
+            print(f"Checked for {tool}. No trace found, but proceeding with cleanup.")
+
+    # Remove Kubernetes-related directories
+    directories = ["/etc/kubernetes", "/var/lib/kubelet"]
+    for directory in directories:
+        if os.path.exists(directory):
+            print(f"Removing directory: {directory}")
+            run_command(["rm", "-rf", directory])
+
+    print("Kubernetes tools and related components cleaned up.")
+
 def configure_dns():
     """
     Configures DNS to use the specified nameserver.
@@ -84,7 +110,7 @@ def set_hostname():
     """
     Sets the hostname of the machine.
     """
-    print("Setting hostname...")
+    print(f"Setting hostname to {hostname}...")
     run_command(['hostnamectl', 'set-hostname', hostname])
     with open("/etc/hosts", "a") as hosts_file:
         hosts_file.write(f"127.0.1.1 {hostname}\n")
@@ -151,6 +177,7 @@ def main():
         return
 
     update_system()  # Update system packages
+    remove_kubernetes_tools()  # Remove existing Kubernetes tools if found
     configure_dns()  # Configure DNS
     disable_ipv6()  # Disable IPv6 permanently
     set_hostname()  # Set system hostname
