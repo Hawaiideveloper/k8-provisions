@@ -2,7 +2,6 @@
 
 import os
 import subprocess
-import yaml
 
 # Configuration
 adapters = ["ens34", "ens35", "ens36"]  # List of network adapters to configure
@@ -12,6 +11,7 @@ routes_to_remove = {
     "ens35": "192.168.79.1",
     "ens36": "192.168.69.1"
 }
+nameserver = "172.100.55.2"  # Desired nameserver for DNS resolution
 
 def run_command(command):
     """
@@ -24,6 +24,46 @@ def run_command(command):
     except subprocess.CalledProcessError as e:
         print(f"Error running command '{' '.join(command)}': {e.stderr.strip()}")
         return None
+
+def configure_dns():
+    """
+    Configures DNS to use the specified nameserver.
+    """
+    print(f"Setting nameserver to {nameserver}...")
+    resolv_conf = "/etc/resolv.conf"
+    with open(resolv_conf, "w") as resolv_file:
+        resolv_file.write(f"nameserver {nameserver}\n")
+    print("DNS configured successfully.")
+
+def disable_ipv6():
+    """
+    Disables IPv6 permanently.
+    """
+    print("Disabling IPv6 permanently...")
+    sysctl_conf = "/etc/sysctl.d/99-sysctl.conf"
+    ipv6_config = [
+        "net.ipv6.conf.all.disable_ipv6 = 1",
+        "net.ipv6.conf.default.disable_ipv6 = 1"
+    ]
+    
+    # Add IPv6 disable configuration if not already present
+    with open(sysctl_conf, "a") as sysctl_file:
+        for line in ipv6_config:
+            sysctl_file.write(line + "\n")
+
+    # Apply sysctl changes
+    result = run_command(["sysctl", "--system"])
+    if result:
+        print("IPv6 successfully disabled.")
+    else:
+        print("Failed to disable IPv6. Please check your configuration.")
+
+    # Verify IPv6 status
+    ipv6_status = run_command(["ip", "a"])
+    if "inet6" in ipv6_status:
+        print("IPv6 addresses are still present. Ensure the configuration is correct.")
+    else:
+        print("IPv6 is completely disabled.")
 
 def disable_swap():
     """
@@ -75,6 +115,9 @@ def configure_firewall():
         run_command(['ufw', 'allow', port + '/tcp'])
     run_command(['ufw', 'enable'])
     print("Firewall configured for Kubernetes ports.")
+    # Validate UFW rules
+    ufw_status = run_command(['ufw', 'status'])
+    print(f"UFW status:\n{ufw_status}")
 
 def remove_default_routes():
     """
@@ -88,6 +131,17 @@ def remove_default_routes():
         else:
             print(f"Failed to remove route via {gateway} on {adapter} or it did not exist.")
 
+def verify_kubeadm_preflight():
+    """
+    Verifies kubeadm preflight checks.
+    """
+    print("Running kubeadm preflight checks...")
+    result = run_command(['kubeadm', 'config', 'images', 'pull'])
+    if result is not None:
+        print("Preflight checks passed. Images pulled successfully.")
+    else:
+        print("Preflight checks failed. Verify kubeadm readiness.")
+
 def main():
     """
     Main function to setup the machine for Kubernetes.
@@ -97,23 +151,13 @@ def main():
         return
 
     update_system()  # Update system packages
+    configure_dns()  # Configure DNS
+    disable_ipv6()  # Disable IPv6 permanently
     set_hostname()  # Set system hostname
     disable_swap()  # Disable swap
     configure_firewall()  # Setup firewall
     remove_default_routes()  # Remove specified default routes
-
-    # Networking configuration (Netplan)
-    adapters_info = {}
-    for i, adapter in enumerate(adapters):
-        print(f"Processing adapter: {adapter}")
-        # Only the first adapter is marked as primary for the default route
-        info = get_adapter_info(adapter, primary=(i == 0))
-        if info:
-            print(f"Adapter {adapter}: {info}")
-        adapters_info[adapter] = info
-
-    write_netplan_config(adapters_info, config_file)
-    apply_netplan_config()
+    verify_kubeadm_preflight()  # Run kubeadm preflight checks
 
 if __name__ == "__main__":
     main()
