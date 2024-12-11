@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Set environment to avoid prompts
+export DEBIAN_FRONTEND=noninteractive
+
+
 # Exit if any command fails
 set -e
 
