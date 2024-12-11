@@ -124,8 +124,12 @@ def configure_firewall():
         "6443",    # Kubernetes API server
         "2379:2380",  # etcd server client API
         "10250",   # Kubelet API
+        "10251",   # kube-scheduler
+        "10252"    # kube-controller-manager  
         "10255",   # Read-only Kubelet API
         "30000:32767"  # NodePort Services
+
+
     ]
     for port in k8s_ports:
         run_command(['ufw', 'allow', port + '/tcp'], ignore_errors=True)
