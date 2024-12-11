@@ -206,7 +206,6 @@ def main():
     set_hostname()  # Set system hostname
     disable_swap()  # Disable swap
     configure_firewall()  # Setup firewall
-    remove_default_routes()  # Remove specified default routes
     verify_kubeadm_preflight()  # Run kubeadm preflight checks
 
 if __name__ == "__main__":
