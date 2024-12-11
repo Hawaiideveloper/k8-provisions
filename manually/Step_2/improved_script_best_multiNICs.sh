@@ -106,6 +106,11 @@ cat <<EOF | sudo tee /etc/resolv.conf
 nameserver 172.100.55.2
 EOF
 
+# Remove conflicting default routes
+echo "Removing conflicting default routes..."
+sudo ip route del default via 192.168.79.1 dev ens35 || true
+sudo ip route del default via 192.168.69.1 dev ens36 || true
+
 # Verify routing table
 echo "Current routing table:"
 ip route show
