@@ -1,118 +1,132 @@
 #!/bin/bash
 
+# Exit immediately if a command exits with a non-zero status
+set -euxo pipefail
 
+# Kubernetes Version Configuration
+KUBERNETES_VERSION="v1.30"
+CRIO_VERSION="v1.30"
+KUBERNETES_INSTALL_VERSION="1.30.0-1.1"
 
-
-# Exit if any command fails
-set -e
-
-# Set hostname
-echo "Setting hostname to 'k8-controlplane'..."
-sudo hostnamectl set-hostname k8-controlplane
+# Set Hostname
+HOSTNAME="k8-controlplane"
+echo "Setting hostname to '$HOSTNAME'..."
+sudo hostnamectl set-hostname $HOSTNAME
 
 # Load necessary kernel modules
 echo "Loading kernel modules..."
-cat <<EOF | sudo tee /etc/modules-load.d/containerd.conf
+cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
 overlay
 br_netfilter
 EOF
+
 sudo modprobe overlay
 sudo modprobe br_netfilter
 
-# Configure sysctl
+# Sysctl params required by setup, params persist across reboots
 echo "Configuring sysctl parameters..."
-cat <<EOF | sudo tee /etc/sysctl.d/99-kubernetes-cri.conf
+cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-iptables = 1
-net.ipv4.ip_forward = 1
 net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward = 1
 EOF
+
+# Apply sysctl parameters
 sudo sysctl --system
 
-# Install and configure containerd
-echo "Installing containerd..."
-sudo apt-get update && sudo apt-get install -y containerd
-sudo mkdir -p /etc/containerd
-sudo containerd config default | sudo tee /etc/containerd/config.toml
-sudo sed -i 's|sandbox_image = .*|sandbox_image = "registry.k8s.io/pause:3.10"|' /etc/containerd/config.toml
-sudo systemctl restart containerd
-sudo systemctl enable containerd
-
-# Install net-tools (for netstat)
-echo "Installing net-tools for netstat..."
-sudo apt-get install -y net-tools
-
-# Disable swap
+# Disable swap and ensure it remains disabled
 echo "Disabling swap..."
 sudo swapoff -a
 sudo sed -i '/ swap / s/^/#/' /etc/fstab
+(crontab -l 2>/dev/null; echo "@reboot /sbin/swapoff -a") | crontab - || true
 
-# Add Kubernetes APT repository
-echo "Adding Kubernetes APT repository..."
-sudo apt-get install -y apt-transport-https curl gnupg
-sudo mkdir -p /etc/apt/keyrings
-curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
-sudo apt-get update
+# Update system packages
+echo "Updating system packages..."
+sudo apt-get update -y
+sudo apt-get upgrade -y
 
-# Install kubelet, kubeadm, and kubectl
-echo "Installing kubelet, kubeadm, and kubectl (v1.31.2-1.1)..."
-sudo apt-get install -y kubelet=1.31.2-1.1 kubeadm=1.31.2-1.1 kubectl=1.31.2-1.1
+# Install necessary dependencies
+echo "Installing dependencies..."
+sudo apt-get install -y apt-transport-https ca-certificates curl gpg jq software-properties-common
+
+# Install CRI-O runtime
+echo "Installing CRI-O runtime..."
+curl -fsSL https://pkgs.k8s.io/addons:/cri-o:/stable:/$CRIO_VERSION/deb/Release.key | \
+    gpg --dearmor -o /etc/apt/keyrings/cri-o-apt-keyring.gpg
+
+echo "deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg] https://pkgs.k8s.io/addons:/cri-o:/stable:/$CRIO_VERSION/deb/ /" | \
+    sudo tee /etc/apt/sources.list.d/cri-o.list
+
+sudo apt-get update -y
+sudo apt-get install -y cri-o
+sudo systemctl daemon-reload
+sudo systemctl enable crio --now
+sudo systemctl start crio.service
+
+echo "CRI-O runtime installed successfully."
+
+# Install kubelet, kubectl, and kubeadm
+echo "Installing kubelet, kubeadm, and kubectl..."
+curl -fsSL https://pkgs.k8s.io/core:/stable:/$KUBERNETES_VERSION/deb/Release.key | \
+    gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/$KUBERNETES_VERSION/deb/ /" | \
+    sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+sudo apt-get update -y
+sudo apt-get install -y kubelet="$KUBERNETES_INSTALL_VERSION" kubectl="$KUBERNETES_INSTALL_VERSION" kubeadm="$KUBERNETES_INSTALL_VERSION"
 sudo apt-mark hold kubelet kubeadm kubectl
 
-# Pre-pull required images for kubeadm
-echo "Pre-pulling Kubernetes images..."
-sudo kubeadm config images pull
+echo "kubelet, kubeadm, and kubectl installed successfully."
 
-# Clean up multiple default gateways
+# Configure kubelet with node IP
+echo "Configuring kubelet with node IP..."
+NODE_IP=$(ip --json addr show eth1 | jq -r '.[0].addr_info[] | select(.family == "inet") | .local')
+echo "KUBELET_EXTRA_ARGS=--node-ip=$NODE_IP" | sudo tee /etc/default/kubelet
+sudo systemctl daemon-reload
+sudo systemctl restart kubelet
+
+# Configure DNS
+echo "Configuring DNS to use 172.100.55.2..."
+cat <<EOF | sudo tee /etc/resolv.conf
+nameserver 172.100.55.2
+EOF
+
+# Remove conflicting default routes
 echo "Removing conflicting default routes..."
-sudo ip route del default via 192.168.69.1 dev ens36 || true
 sudo ip route del default via 192.168.79.1 dev ens35 || true
+sudo ip route del default via 192.168.69.1 dev ens36 || true
 
-# Confirm default gateway
+# Verify routing table
 echo "Current routing table:"
 ip route show
 
-# Restart systemd-resolved to ensure DNS resolution works
-echo "Restarting systemd-resolved..."
-sudo systemctl restart systemd-resolved
+# Pre-pull Kubernetes images
+echo "Pre-pulling Kubernetes images..."
+sudo kubeadm config images pull
 
-# Verify DNS resolution
-echo "Verifying DNS resolution..."
-if ! nslookup google.com; then
-    echo "DNS resolution failed. Please check your network configuration."
-    exit 1
-fi
-
-# Initialize Kubernetes with Pod Network CIDR
+# Initialize Kubernetes control plane
 echo "Initializing Kubernetes control plane..."
-sudo kubeadm init --pod-network-cidr=192.168.79.0/24 --kubernetes-version=v1.31.2 --apiserver-advertise-address=$(hostname -I | awk '{print $1}')
+sudo kubeadm init --pod-network-cidr=192.168.79.0/24 --kubernetes-version="$KUBERNETES_INSTALL_VERSION" --apiserver-advertise-address=$NODE_IP
 
-# Configure kubectl for current user
-echo "Configuring kubectl for the current user..."
+# Configure kubectl for the current user
+echo "Configuring kubectl for current user..."
 mkdir -p $HOME/.kube
 sudo cp /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
 # Verify Kubernetes API server
-echo "Checking if Kubernetes API server is running..."
+echo "Verifying Kubernetes API server..."
 if ! netstat -tuln | grep -q 6443; then
     echo "Kubernetes API server is not running. Check kubelet logs for details."
     sudo journalctl -xeu kubelet
     exit 1
 fi
 
-# Verify kubelet service
-echo "Checking if kubelet service is active..."
-if ! sudo systemctl is-active --quiet kubelet; then
-    echo "kubelet service is not running. Starting kubelet..."
-    sudo systemctl start kubelet
-fi
-
-# Display join command for worker nodes
-echo "Use the following command to join worker nodes to the cluster:"
-sudo kubeadm token create --print-join-command
-
-# Verification commands
-echo "Control plane setup complete. Verify the setup using the following commands:"
+echo "Control plane setup is complete."
+echo "Use the following commands to verify the setup:"
 echo "kubectl get nodes"
 echo "kubectl get pods -n kube-system"
+
+echo "Join worker nodes to the cluster using the following command:"
+sudo kubeadm token create --print-join-command
