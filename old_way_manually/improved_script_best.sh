@@ -81,7 +81,7 @@ echo "kubelet, kubeadm, and kubectl installed successfully."
 
 # Configure kubelet with node IP
 echo "Configuring kubelet with node IP..."
-NODE_IP=$(ip --json addr show eth1 | jq -r '.[0].addr_info[] | select(.family == "inet") | .local')
+NODE_IP=$(ip --json addr show ens34 | jq -r '.[0].addr_info[] | select(.family == "inet") | .local')
 echo "KUBELET_EXTRA_ARGS=--node-ip=$NODE_IP" | sudo tee /etc/default/kubelet
 sudo systemctl daemon-reload
 sudo systemctl restart kubelet
