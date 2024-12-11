@@ -165,17 +165,17 @@ def configure_firewall():
     run_command(['ufw', 'enable'], ignore_errors=True)
     print("Firewall configured for Kubernetes ports.")
 
-def remove_default_routes():
-    """
-    Removes specific default routes as required for Kubernetes network setup.
-    """
-    print("Removing specific default routes...")
-    for adapter, gateway in routes_to_remove.items():
-        result = run_command(['ip', 'route', 'del', 'default', 'via', gateway, 'dev', adapter], ignore_errors=True)
-        if result is not None:
-            print(f"Removed default route via {gateway} on {adapter}")
-        else:
-            print(f"Route via {gateway} on {adapter} not present. Skipping.")
+# def remove_default_routes():
+#     """
+#     Removes specific default routes as required for Kubernetes network setup.
+#     """
+#     print("Removing specific default routes...")
+#     for adapter, gateway in routes_to_remove.items():
+#         result = run_command(['ip', 'route', 'del', 'default', 'via', gateway, 'dev', adapter], ignore_errors=True)
+#         if result is not None:
+#             print(f"Removed default route via {gateway} on {adapter}")
+#         else:
+#             print(f"Route via {gateway} on {adapter} not present. Skipping.")
 
 def verify_kubeadm_preflight():
     """
