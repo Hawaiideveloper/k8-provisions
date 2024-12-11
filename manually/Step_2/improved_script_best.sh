@@ -139,3 +139,9 @@ echo "kubectl get pods -n kube-system"
 
 echo "Join worker nodes to the cluster using the following command:"
 sudo kubeadm token create --print-join-command
+
+# Configure kubectl for the current user
+echo "Configuring kubectl for current user..."
+mkdir -p $HOME/.kube
+sudo cp /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
