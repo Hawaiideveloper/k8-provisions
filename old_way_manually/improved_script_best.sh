@@ -2,6 +2,7 @@
 
 # Set environment to avoid prompts
 export DEBIAN_FRONTEND=noninteractive
+sudo apt-get upgrade --with-new-pkgs -y
 
 
 # Exit if any command fails
