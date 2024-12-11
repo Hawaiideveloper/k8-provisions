@@ -1,3 +1,7 @@
+watching the video here
+https://www.youtube.com/watch?v=xX52dc3u2HU
+
+
 I am deciding to move to a branch called ansible_way
 
 
