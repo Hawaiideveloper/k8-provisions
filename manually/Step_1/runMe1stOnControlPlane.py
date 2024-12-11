@@ -122,10 +122,11 @@ def configure_firewall():
     print("Configuring firewall for Kubernetes ports...")
     k8s_ports = [
         "6443",    # Kubernetes API server
+        "8080",    #API group list
         "2379:2380",  # etcd server client API
         "10250",   # Kubelet API
         "10251",   # kube-scheduler
-        "10252"    # kube-controller-manager  
+        "10252",    # kube-controller-manager  
         "10255",   # Read-only Kubelet API
         "30000:32767"  # NodePort Services
 
