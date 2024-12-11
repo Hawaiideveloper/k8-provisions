@@ -3,6 +3,11 @@
 # Exit immediately if a command exits with a non-zero status
 set -euxo pipefail
 
+# Remove Cloud init
+sudo apt purge cloud-init -y
+sudo rm -rf /etc/cloud /var/lib/cloud
+
+
 # Kubernetes Version Configuration
 KUBERNETES_VERSION="v1.30"
 CRIO_VERSION="v1.30"
