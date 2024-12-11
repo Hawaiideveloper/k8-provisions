@@ -4,6 +4,15 @@
 set -euxo pipefail
 
 # Remove Cloud init
+cloud-init status
+
+sudo systemctl disable cloud-init
+sudo systemctl mask cloud-init
+
+sudo touch /etc/cloud/cloud-init.disabled
+
+sudo cloud-init clean
+
 sudo apt purge cloud-init -y
 sudo rm -rf /etc/cloud /var/lib/cloud
 
