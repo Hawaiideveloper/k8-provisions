@@ -21,34 +21,60 @@ def update_system():
 
 # Function to add the CRI-O repository
 def add_crio_repository():
+    """
+    Adds the CRI-O repository and imports the required GPG key.
+    Ensures repositories are correctly linked with their signing key.
+    """
     print("Adding CRI-O repository...")
+
+    # Variables for repository setup
     os_version = "xUbuntu_22.04"
     cri_version = "1.28"
-    
-    # Import GPG key
     gpg_key_url = "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Release.key"
-    run_command(
-        f"curl -fsSL {gpg_key_url} | sudo gpg --dearmor -o /usr/share/keyrings/libcontainers-archive-keyring.gpg",
-        "Failed to import GPG key for CRI-O repository."
-    )
+    gpg_key_path = "/usr/share/keyrings/libcontainers-archive-keyring.gpg"
     
-    # Add the repositories
-    crio_repo = (
-        f"deb [signed-by=/usr/share/keyrings/libcontainers-archive-keyring.gpg] "
-        f"https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/{os_version}/ /"
-    )
-    cri_version_repo = (
-        f"deb [signed-by=/usr/share/keyrings/libcontainers-archive-keyring.gpg] "
-        f"https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/{cri_version}/{os_version}/ /"
-    )
-    run_command(
-        f"echo \"{crio_repo}\" | sudo tee /etc/apt/sources.list.d/libcontainers.list",
-        "Failed to add CRI-O repository."
-    )
-    run_command(
-        f"echo \"{cri_version_repo}\" | sudo tee /etc/apt/sources.list.d/cri-o.list",
-        "Failed to add CRI-O version-specific repository."
-    )
+    try:
+        # Step 1: Import the GPG key
+        print("Importing GPG key for CRI-O repository...")
+        run_command(
+            f"curl -fsSL {gpg_key_url} | sudo gpg --dearmor -o {gpg_key_path}",
+            "Failed to import GPG key for CRI-O repository."
+        )
+
+        # Step 2: Add the base repository
+        print("Adding CRI-O base repository...")
+        crio_repo = (
+            f"deb [signed-by={gpg_key_path}] "
+            f"https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/{os_version}/ /"
+        )
+        run_command(
+            f"echo \"{crio_repo}\" | sudo tee /etc/apt/sources.list.d/libcontainers.list",
+            "Failed to add CRI-O base repository."
+        )
+
+        # Step 3: Add the version-specific repository
+        print("Adding CRI-O version-specific repository...")
+        cri_version_repo = (
+            f"deb [signed-by={gpg_key_path}] "
+            f"https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/{cri_version}/{os_version}/ /"
+        )
+        run_command(
+            f"echo \"{cri_version_repo}\" | sudo tee /etc/apt/sources.list.d/cri-o.list",
+            "Failed to add CRI-O version-specific repository."
+        )
+
+        # Step 4: Update apt package list
+        print("Updating package list...")
+        run_command(
+            "sudo apt-get update",
+            "Failed to update package list after adding CRI-O repository."
+        )
+        
+        print("CRI-O repository added successfully.")
+
+    except Exception as e:
+        print(f"Error adding CRI-O repository: {e}")
+        raise
 
 
 # Function to install CRI-O
