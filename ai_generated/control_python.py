@@ -1,5 +1,13 @@
-import subprocess
 import os
+import sys
+import subprocess
+
+def check_root():
+    if os.geteuid() != 0:
+        print("This script must be run as root. Use 'sudo'.")
+        sys.exit(1)
+
+check_root()
 
 def run_command(command, error_message):
     try:
@@ -22,6 +30,31 @@ def update_system_and_install_dependencies():
         print("System updated and prerequisites installed.")
     except Exception as e:
         print(f"Error during system update and dependency installation: {e}")
+        raise
+
+def ensure_make_installed():
+    print("Ensuring 'make' is installed...")
+    try:
+        result = subprocess.run("make --version", shell=True, text=True, capture_output=True)
+        if result.returncode != 0:
+            print("'make' not found. Installing 'make'...")
+            run_command("sudo apt-get install -y make", "Failed to install 'make'.")
+    except Exception as e:
+        print(f"Error ensuring 'make' is installed: {e}")
+        raise
+
+def ensure_go_installed():
+    print("Ensuring Go is installed...")
+    try:
+        result = subprocess.run("go version", shell=True, text=True, capture_output=True)
+        if result.returncode != 0:
+            print("Go not found. Installing Go...")
+            run_command(
+                "sudo apt-get install -y golang",
+                "Failed to install Go."
+            )
+    except Exception as e:
+        print(f"Error ensuring Go is installed: {e}")
         raise
 
 def clone_and_build_crio():
@@ -60,6 +93,8 @@ def clone_and_build_crio():
 def main():
     try:
         update_system_and_install_dependencies()
+        ensure_make_installed()
+        ensure_go_installed()
         clone_and_build_crio()
         print("Control plane setup completed successfully.")
     except Exception as e:
