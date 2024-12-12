@@ -1,5 +1,4 @@
 import subprocess
-import os
 
 def run_command(command, error_message):
     try:
@@ -8,88 +7,67 @@ def run_command(command, error_message):
         print(f"Error: {error_message}\nCommand: {command}\n{e}")
         raise
 
-# Function to check if a file exists and is valid
-def validate_gpg_key(file_path):
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"GPG key file not found: {file_path}")
+def update_system_and_install_dependencies():
+    print("Updating system and installing prerequisites...")
     try:
-        result = subprocess.run(
-            ["gpg", "--list-packets", file_path],
-            check=True,
-            text=True,
-            capture_output=True
+        run_command("sudo apt-get update -qq", "Failed to update the package list.")
+        run_command(
+            "sudo apt-get install -y "
+            "libbtrfs-dev containers-common git libassuan-dev libglib2.0-dev libc6-dev "
+            "libgpgme-dev libgpg-error-dev libseccomp-dev libsystemd-dev libselinux1-dev "
+            "pkg-config go-md2man cri-o-runc libudev-dev software-properties-common gcc make",
+            "Failed to install required dependencies for CRI-O."
         )
-        if "keyid" not in result.stdout:
-            raise ValueError("Invalid GPG key file content.")
+        print("System updated and prerequisites installed.")
     except Exception as e:
-        print(f"Error validating GPG key: {e}")
+        print(f"Error during system update and dependency installation: {e}")
         raise
 
-# Function to add CRI-O repository
-def add_crio_repository():
-    print("Adding CRI-O repository...")
-
-    os_version = "xUbuntu_22.04"
-    cri_version = "1.28"
-    gpg_key_url = "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Release.key"
-    gpg_key_path = "/usr/share/keyrings/libcontainers-archive-keyring.gpg"
-
+def configure_crio_repository():
+    print("Configuring CRI-O repository...")
     try:
+        os_version = "xUbuntu_22.04"
+        cri_version = "1.28"
+        gpg_key_url = "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Release.key"
+        gpg_key_path = "/usr/share/keyrings/libcontainers-archive-keyring.gpg"
+
         # Import GPG key
-        print("Importing GPG key...")
         run_command(
             f"curl -fsSL {gpg_key_url} | sudo gpg --dearmor -o {gpg_key_path}",
             "Failed to import GPG key for CRI-O repository."
         )
-        validate_gpg_key(gpg_key_path)
 
-        # Add the base repository
-        print("Adding base repository...")
+        # Add repositories
         crio_repo = (
             f"deb [signed-by={gpg_key_path}] "
             f"https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/{os_version}/ /"
         )
-        run_command(
-            f"echo \"{crio_repo}\" | sudo tee /etc/apt/sources.list.d/libcontainers.list",
-            "Failed to add base repository."
-        )
-
-        # Add version-specific repository
-        print("Adding version-specific repository...")
         cri_version_repo = (
             f"deb [signed-by={gpg_key_path}] "
             f"https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/{cri_version}/{os_version}/ /"
         )
         run_command(
-            f"echo \"{cri_version_repo}\" | sudo tee /etc/apt/sources.list.d/cri-o.list",
-            "Failed to add version-specific repository."
+            f"echo \"{crio_repo}\" | sudo tee /etc/apt/sources.list.d/libcontainers.list",
+            "Failed to add base CRI-O repository."
         )
-
-        # Update package list
-        print("Updating package list...")
         run_command(
-            "sudo apt-get update",
-            "Failed to update package list after adding CRI-O repository."
+            f"echo \"{cri_version_repo}\" | sudo tee /etc/apt/sources.list.d/cri-o.list",
+            "Failed to add version-specific CRI-O repository."
         )
-        print("CRI-O repository added successfully.")
 
+        run_command("sudo apt-get update -qq", "Failed to update the package list after adding repositories.")
+        print("CRI-O repository configured successfully.")
     except Exception as e:
-        print(f"Error adding CRI-O repository: {e}")
+        print(f"Error configuring CRI-O repository: {e}")
         raise
 
-# Function to test the control plane setup
-def test_control_plane_setup():
+def main():
     try:
-        print("Testing GPG key validation...")
-        validate_gpg_key("/usr/share/keyrings/libcontainers-archive-keyring.gpg")
-        print("GPG key validation passed.")
-    except Exception as e:
-        print(f"Test failed: {e}")
-
-if __name__ == "__main__":
-    try:
-        add_crio_repository()
-        test_control_plane_setup()
+        update_system_and_install_dependencies()
+        configure_crio_repository()
         print("Control plane setup completed successfully.")
     except Exception as e:
         print(f"Setup failed: {e}")
+
+if __name__ == "__main__":
+    main()
