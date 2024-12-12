@@ -24,9 +24,9 @@ def add_crio_repository():
     print("Adding CRI-O repository...")
     os_version = "xUbuntu_22.04"
     cri_version = "1.28"
-    gpg_key_url = "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Release.key"
     
     # Import GPG key
+    gpg_key_url = "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Release.key"
     run_command(
         f"curl -fsSL {gpg_key_url} | sudo gpg --dearmor -o /usr/share/keyrings/libcontainers-archive-keyring.gpg",
         "Failed to import GPG key for CRI-O repository."
