@@ -1,4 +1,5 @@
 import subprocess
+import os
 
 def run_command(command, error_message):
     try:
@@ -16,55 +17,50 @@ def update_system_and_install_dependencies():
             "libbtrfs-dev containers-common git libassuan-dev libglib2.0-dev libc6-dev "
             "libgpgme-dev libgpg-error-dev libseccomp-dev libsystemd-dev libselinux1-dev "
             "pkg-config go-md2man cri-o-runc libudev-dev software-properties-common gcc make",
-            "Failed to install required dependencies for CRI-O."
+            "Failed to install required dependencies for building CRI-O."
         )
         print("System updated and prerequisites installed.")
     except Exception as e:
         print(f"Error during system update and dependency installation: {e}")
         raise
 
-def configure_crio_repository():
-    print("Configuring CRI-O repository...")
+def clone_and_build_crio():
+    print("Cloning and building CRI-O from source...")
     try:
-        os_version = "xUbuntu_22.04"
-        cri_version = "1.28"
-        gpg_key_url = "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Release.key"
-        gpg_key_path = "/usr/share/keyrings/libcontainers-archive-keyring.gpg"
-
-        # Import GPG key
+        # Clone the CRI-O repository
         run_command(
-            f"curl -fsSL {gpg_key_url} | sudo gpg --dearmor -o {gpg_key_path}",
-            "Failed to import GPG key for CRI-O repository."
+            "git clone https://github.com/cri-o/cri-o.git", "Failed to clone the CRI-O repository."
         )
 
-        # Add repositories
-        crio_repo = (
-            f"deb [signed-by={gpg_key_path}] "
-            f"https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/{os_version}/ /"
-        )
-        cri_version_repo = (
-            f"deb [signed-by={gpg_key_path}] "
-            f"https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/{cri_version}/{os_version}/ /"
-        )
+        # Change directory to the CRI-O repository
+        os.chdir("cri-o")
+
+        # Checkout the latest stable release
         run_command(
-            f"echo \"{crio_repo}\" | sudo tee /etc/apt/sources.list.d/libcontainers.list",
-            "Failed to add base CRI-O repository."
-        )
-        run_command(
-            f"echo \"{cri_version_repo}\" | sudo tee /etc/apt/sources.list.d/cri-o.list",
-            "Failed to add version-specific CRI-O repository."
+            "git checkout $(git describe --abbrev=0 --tags)",
+            "Failed to checkout the latest stable release of CRI-O."
         )
 
-        run_command("sudo apt-get update -qq", "Failed to update the package list after adding repositories.")
-        print("CRI-O repository configured successfully.")
+        # Install dependencies using make
+        run_command(
+            "sudo make install.config", "Failed to install CRI-O configuration files."
+        )
+        run_command(
+            "sudo make", "Failed to build CRI-O from source."
+        )
+        run_command(
+            "sudo make install", "Failed to install CRI-O."
+        )
+        print("CRI-O built and installed successfully from source.")
+
     except Exception as e:
-        print(f"Error configuring CRI-O repository: {e}")
+        print(f"Error building CRI-O from source: {e}")
         raise
 
 def main():
     try:
         update_system_and_install_dependencies()
-        configure_crio_repository()
+        clone_and_build_crio()
         print("Control plane setup completed successfully.")
     except Exception as e:
         print(f"Setup failed: {e}")
