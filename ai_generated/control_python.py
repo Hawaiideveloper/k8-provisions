@@ -32,7 +32,7 @@ def add_crio_repository():
     cri_version = "1.28"
     gpg_key_url = "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Release.key"
     gpg_key_path = "/usr/share/keyrings/libcontainers-archive-keyring.gpg"
-    
+
     try:
         # Step 1: Import the GPG key
         print("Importing GPG key for CRI-O repository...")
@@ -49,7 +49,7 @@ def add_crio_repository():
         )
         run_command(
             f"echo \"{crio_repo}\" | sudo tee /etc/apt/sources.list.d/libcontainers.list",
-            "Failed to add CRI-O base repository."
+            "Failed to add base CRI-O repository."
         )
 
         # Step 3: Add the version-specific repository
@@ -60,7 +60,7 @@ def add_crio_repository():
         )
         run_command(
             f"echo \"{cri_version_repo}\" | sudo tee /etc/apt/sources.list.d/cri-o.list",
-            "Failed to add CRI-O version-specific repository."
+            "Failed to add version-specific CRI-O repository."
         )
 
         # Step 4: Update apt package list
@@ -75,6 +75,7 @@ def add_crio_repository():
     except Exception as e:
         print(f"Error adding CRI-O repository: {e}")
         raise
+
 
 
 # Function to install CRI-O
