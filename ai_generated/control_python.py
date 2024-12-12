@@ -30,7 +30,7 @@ def add_crio_repository():
     # Variables for repository setup
     os_version = "xUbuntu_22.04"
     cri_version = "1.28"
-    gpg_key_url = "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Release.key"
+    gpg_key_url = "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
     gpg_key_path = "/usr/share/keyrings/libcontainers-archive-keyring.gpg"
 
     try:
@@ -75,6 +75,7 @@ def add_crio_repository():
     except Exception as e:
         print(f"Error adding CRI-O repository: {e}")
         raise
+
 
 
 
