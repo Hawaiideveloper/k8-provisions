@@ -57,6 +57,10 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 echo "Installing Calico network plugin..."
 kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
 
+
+# We need to reboot
+sudo reboot
+
 # Verify cluster nodes
 echo "Verifying cluster nodes..."
 kubectl get nodes
