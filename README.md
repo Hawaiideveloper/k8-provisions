@@ -1,3 +1,11 @@
+Experimental:
+
+we left off on this chat:
+
+
+
+
+
 # KUBEADM (Kubernetes) Install and configurations
 
 
