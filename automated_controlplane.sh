@@ -24,6 +24,19 @@ K8S_VERSION="1.31.2"  # Replace with your desired Kubernetes version
 sudo apt-get install -y kubelet=${K8S_VERSION}-00 kubeadm=${K8S_VERSION}-00 kubectl=${K8S_VERSION}-00
 sudo apt-mark hold kubelet kubeadm kubectl
 
+# If we dont get the apt-get to work try this:
+curl -LO "https://dl.k8s.io/release/v1.31.2/bin/linux/amd64/kubectl"
+curl -LO "https://dl.k8s.io/release/v1.31.2/bin/linux/amd64/kubeadm"
+curl -LO "https://dl.k8s.io/release/v1.31.2/bin/linux/amd64/kubelet"
+chmod +x kubectl kubeadm kubelet
+
+sudo mv kubectl kubeadm kubelet /usr/local/bin/
+
+kubectl version --client
+kubeadm version
+kubelet --version
+
+
 # Disable swap (Kubernetes requires swap to be off)
 echo "Disabling swap..."
 sudo swapoff -a
