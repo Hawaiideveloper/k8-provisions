@@ -75,6 +75,27 @@ echo "if the line says this: /swap.img       none    swap    sw      0       0"
 echo "then you need to go to /etc/fstab and comment it out"
 grep '/swap.img' /etc/fstab
 
+# Fix any DNS issues that could prevent kublet from working
+# Define the target file
+RESOLV_FILE="/etc/resolv.conf"
+
+# Backup the existing resolv.conf file
+if [ -f "$RESOLV_FILE" ]; then
+    cp "$RESOLV_FILE" "${RESOLV_FILE}.backup"
+    echo "Backup created at ${RESOLV_FILE}.backup"
+fi
+
+# Overwrite resolv.conf with new content
+echo "fixing DNS so that kublet will run without issues"
+cat <<EOF > "$RESOLV_FILE"
+nameserver 172.100.55.2
+nameserver 8.8.4.4
+search albrightlabs.local
+EOF
+
+echo "Updated $RESOLV_FILE with new DNS configuration."
+echo "now reloading the dns"
+sudo systemctl restart systemd-resolved
 
 
 
