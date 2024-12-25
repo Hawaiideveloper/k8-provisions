@@ -66,6 +66,22 @@ echo "Disabling swap..."
 sudo swapoff -a
 sudo sed -i '/ swap / s/^/#/' /etc/fstab
 
+
+# Enable IP forwarding
+echo "Temporarily Enable IP Forwarding:"
+sudo sysctl -w net.ipv4.ip_forward=1
+
+echo "Persist IP Forwarding Across Reboots:"
+echo "net.ipv4.ip_forward = 1" | sudo tee -a /etc/sysctl.conf
+
+echo "Reload the configuration:"
+sudo sysctl --system
+
+echo "Verify the setting .... it should equal 1"
+cat /proc/sys/net/ipv4/ip_forward
+
+
+
 # Initialize Kubernetes control plane
 echo "Initializing Kubernetes control plane..."
 POD_NETWORK_CIDR="192.168.79.0/24"
