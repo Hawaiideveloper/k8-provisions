@@ -69,7 +69,13 @@ echo "you should say yes to restarting all services"
 # Disable swap (Kubernetes requires swap to be off)
 echo "Disabling swap..."
 sudo swapoff -a
-sudo sed -i '/ swap / s/^/#/' /etc/fstab
+sudo sed -i '/\/swap.img/ s/^/#/' /etc/fstab
+echo "sometimes this does not work and needs manual intervention, see below"
+echo "if the line says this: /swap.img       none    swap    sw      0       0"
+echo "then you need to go to /etc/fstab and comment it out"
+grep '/swap.img' /etc/fstab
+
+
 
 
 # Enable IP forwarding
