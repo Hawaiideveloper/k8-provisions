@@ -9,10 +9,24 @@ sudo apt-get update -y
 sudo apt-get install -y curl apt-transport-https ca-certificates gnupg software-properties-common qemu qemu-kvm
 sudo apt-get install -y containerd
 
+# Make containerd or update containerd
+sudo mkdir -p /etc/containerd
+sudo containerd config default | sudo tee /etc/containerd/config.toml
+
 
 # Remove any incorrect Kubernetes repository configurations
 echo "Removing incorrect Kubernetes repository configuration..."
 sudo rm -f /etc/apt/sources.list.d/kubernetes.list
+
+# Set the sandbox image to the correct Kubernetes image with backup:
+sudo cp /etc/containerd/config.toml /etc/containerd/config.toml.bak
+sudo sed -i 's|sandbox_image = .*|sandbox_image = "registry.k8s.io/pause:3.10"|' /etc/containerd/config.toml
+sudo systemctl restart containerd
+sudo systemctl enable containerd
+
+# Verify the containerd version and is running
+sudo systemctl status containerd
+
 
 # Add Kubernetes repository
 echo "Adding Kubernetes repository..."
