@@ -81,11 +81,18 @@ echo "Verify the setting .... it should equal 1"
 cat /proc/sys/net/ipv4/ip_forward
 
 
+# Pre=pull required images
+K8S_VER="1.31.4"
+sudo kubeadm config images pull --kubernetes-version=$K8S_VERS
+
 
 # Initialize Kubernetes control plane
 echo "Initializing Kubernetes control plane..."
 POD_NETWORK_CIDR="192.168.79.0/24"
-sudo kubeadm init --pod-network-cidr=$POD_NETWORK_CIDR --kubernetes-version=$K8S_VERSION
+K8S_VER="1.31.4"
+sudo kubeadm init --pod-network-cidr=$POD_NETWORK_CIDR --kubernetes-version=$K8S_VER
+echo "if this fails you can try sudo kubeadm init --pod-network-cidr=$POD_NETWORK_CIDR --kubernetes-version=$K8S_VERSION --ignore-preflight-errors=all"
+
 
 # Set up kubeconfig for the current user
 echo "Setting up kubeconfig..."
@@ -93,41 +100,15 @@ mkdir -p $HOME/.kube
 sudo cp /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
-# Install Calico network plugin
-echo "Installing Calico network plugin..."
-kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+
+# You can now join worker nodes using a command like this
+Then you can join any number of worker nodes by running the following on each as root:
+
+kubeadm join 172.100.55.20:6443 --token tkkiyb.76u6s7gwxqgm602h \
+	--discovery-token-ca-cert-hash sha256:fcf0da56bf564a19b7e4bf02fda824c85b5d301cb7c21e0b90c3eca02214a448 
 
 
-# Debug Repo Issue and clear old configurations
-echo "clear old configs"
-sudo apt-get clean
-sudo rm -rf /var/lib/apt/lists/*
-sudo apt-get update
-
-# Suro re-add repo
-echo "re-adding repo"
-sudo rm /etc/apt/sources.list.d/kubernetes.list
-echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-main main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
-sudo apt-get update
-
-# confirm no proxy is blocking us
-sudo apt-get update
-sudo apt-get install --only-upgrade curl openssl ca-certificates
-
-curl -v https://apt.kubernetes.io/
-
-
-# insert a wait
-pause 
-echo "you can skip the wait and reboot manually"
-wait 360
-
-
-# We need to reboot
-sudo systemctl restart packagekit.service
-
+#################################### YOu need to Reboot cause nothing really will work on the next steps #################
 sudo reboot
 
-# Verify cluster nodes
-echo "Verifying cluster nodes..."
-kubectl get nodes
+# Calico is where we left off
