@@ -21,6 +21,11 @@ sudo rm -f /etc/apt/sources.list.d/kubernetes.list
 # Set the sandbox image to the correct Kubernetes image with backup:
 sudo cp /etc/containerd/config.toml /etc/containerd/config.toml.bak
 sudo sed -i 's|sandbox_image = .*|sandbox_image = "registry.k8s.io/pause:3.10"|' /etc/containerd/config.toml
+
+# Set crictl as the default endpoints
+sudo sed -i '1i runtime-endpoint: unix:///run/containerd/containerd.sock\nimage-endpoint: unix:///run/containerd/containerd.sock\ntimeout: 10\ndebug: false' /etc/crictl.yaml
+
+# STart the containerd
 sudo systemctl restart containerd
 sudo systemctl enable containerd
 
@@ -110,5 +115,16 @@ kubeadm join 172.100.55.20:6443 --token tkkiyb.76u6s7gwxqgm602h \
 
 #################################### YOu need to Reboot cause nothing really will work on the next steps #################
 sudo reboot
+
+# Fixing the kube-system not seeing the needed files
+sudo kubeadm init phase kubelet-start
+
+
+
+
+
+
+
+
 
 # Calico is where we left off
