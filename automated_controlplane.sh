@@ -18,12 +18,13 @@ sudo containerd config default | sudo tee /etc/containerd/config.toml
 echo "Removing incorrect Kubernetes repository configuration..."
 # sudo rm -f /etc/apt/sources.list.d/kubernetes.list
 
+# Set crictl as the default endpoints {fixes the sed: can't read /etc/crictl.yaml: No such file or directory }
+sudo sed -i '1i runtime-endpoint: unix:///run/containerd/containerd.sock\nimage-endpoint: unix:///run/containerd/containerd.sock\ntimeout: 10\ndebug: false' /etc/crictl.yaml
+
 # Set the sandbox image to the correct Kubernetes image with backup:
 sudo cp /etc/containerd/config.toml /etc/containerd/config.toml.bak
 sudo sed -i 's|sandbox_image = .*|sandbox_image = "registry.k8s.io/pause:3.10"|' /etc/containerd/config.toml
 
-# Set crictl as the default endpoints
-sudo sed -i '1i runtime-endpoint: unix:///run/containerd/containerd.sock\nimage-endpoint: unix:///run/containerd/containerd.sock\ntimeout: 10\ndebug: false' /etc/crictl.yaml
 
 # STart the containerd
 sudo systemctl restart containerd
