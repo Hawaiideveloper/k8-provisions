@@ -144,10 +144,10 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
 
 # You can now join worker nodes using a command like this
-Then you can join any number of worker nodes by running the following on each as root:
+# Then you can join any number of worker nodes by running the following on each as root:
 
-kubeadm join 172.100.55.20:6443 --token tkkiyb.76u6s7gwxqgm602h \
-	--discovery-token-ca-cert-hash sha256:fcf0da56bf564a19b7e4bf02fda824c85b5d301cb7c21e0b90c3eca02214a448 
+# kubeadm join 172.100.55.20:6443 --token tkkiyb.76u6s7gwxqgm602h \
+# 	--discovery-token-ca-cert-hash sha256:fcf0da56bf564a19b7e4bf02fda824c85b5d301cb7c21e0b90c3eca02214a448 
 
 
 #################################### YOu need to Reboot cause nothing really will work on the next steps #################
