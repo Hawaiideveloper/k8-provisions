@@ -18,8 +18,17 @@ sudo containerd config default | sudo tee /etc/containerd/config.toml
 echo "Removing incorrect Kubernetes repository configuration..."
 # sudo rm -f /etc/apt/sources.list.d/kubernetes.list
 
-# Set crictl as the default endpoints {fixes the sed: can't read /etc/crictl.yaml: No such file or directory }
-sudo sed -i '1i runtime-endpoint: unix:///run/containerd/containerd.sock\nimage-endpoint: unix:///run/containerd/containerd.sock\ntimeout: 10\ndebug: false' /etc/crictl.yaml
+
+# This script checks if /etc/crictl.yaml exists. If it doesn't, the script creates the file with the initial content.
+# If the file exists, it uses sed to insert the lines as you originally intended.
+
+if [ ! -f /etc/crictl.yaml ]; then
+    echo "File not found, creating..."
+    echo -e "runtime-endpoint: unix:///run/containerd/containerd.sock\nimage-endpoint: unix:///run/containerd/containerd.sock\ntimeout: 10\ndebug: false" | sudo tee /etc/crictl.yaml > /dev/null
+else
+    sudo sed -i '1i runtime-endpoint: unix:///run/containerd/containerd.sock\nimage-endpoint: unix:///run/containerd/containerd.sock\ntimeout: 10\ndebug: false' /etc/crictl.yaml
+fi
+
 
 # Set the sandbox image to the correct Kubernetes image with backup:
 sudo cp /etc/containerd/config.toml /etc/containerd/config.toml.bak
