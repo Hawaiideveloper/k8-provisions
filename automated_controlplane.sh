@@ -16,7 +16,7 @@ sudo containerd config default | sudo tee /etc/containerd/config.toml
 
 # Remove any incorrect Kubernetes repository configurations
 echo "Removing incorrect Kubernetes repository configuration..."
-sudo rm -f /etc/apt/sources.list.d/kubernetes.list
+# sudo rm -f /etc/apt/sources.list.d/kubernetes.list
 
 # Set the sandbox image to the correct Kubernetes image with backup:
 sudo cp /etc/containerd/config.toml /etc/containerd/config.toml.bak
