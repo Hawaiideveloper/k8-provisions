@@ -40,7 +40,7 @@ sudo systemctl restart containerd
 sudo systemctl enable containerd
 
 # Verify the containerd version and is running
-sudo systemctl status containerd
+# sudo systemctl status containerd
 
 
 # Add Kubernetes repository
