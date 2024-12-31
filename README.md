@@ -61,8 +61,10 @@ type this:
 ssh-keygen -R k8-controlplane
 ```
 
+Reference taken from 1.31 kubeadm within Kubernetes Docs, and ubuntu 22.04.  
 
-Reference taken from the sources below and an AI called ChatGPT
+## Note after joining a worker node please be sure to run on the control plane
+kubectl label nodes <k8-worker-node-01 or your workers name> node-role.kubernetes.io/worker-node=worker --overwrite
 
-- https://github.com/techiescamp/kubeadm-scripts
-- https://www.youtube.com/watch?v=xX52dc3u2HU
+Make sure to substitue your workers name with the actual hostname
+
