@@ -128,7 +128,7 @@ sudo apt-get update
 K8S_VERSION="1.31.4-1.1"  # most stable kubernetes version that works wirh calico 
 sudo apt-get install -y kubelet=$K8S_VERSION kubeadm=$K8S_VERSION kubectl=$K8S_VERSION
 sudo apt-mark hold kubelet kubeadm kubectl
-
+sudo systemctl enable --now kubelet
 
 # We need to restart all services
 sleep 3
