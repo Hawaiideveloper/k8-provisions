@@ -3,44 +3,86 @@
 # Exit immediately if a command fails
 set -e
 
-# Ensure required tools are installed
-echo "Installing required tools..."
-sudo apt-get update -y
-sudo apt-get install -y curl apt-transport-https ca-certificates gnupg software-properties-common qemu qemu-kvm
-sudo apt-get install -y containerd
-
-# Make containerd or update containerd
-sudo mkdir -p /etc/containerd
-sudo containerd config default | sudo tee /etc/containerd/config.toml
-
-
-# Remove any incorrect Kubernetes repository configurations
-echo "Removing incorrect Kubernetes repository configuration..."
-# sudo rm -f /etc/apt/sources.list.d/kubernetes.list
+# Disable swap (Kubernetes requires swap to be off)
+echo "Disabling swap..."
+sudo swapoff -a
+sudo sed -i '/\/swap.img/ s/^/#/' /etc/fstab
+echo "sometimes this does not work and needs manual intervention, see below"
+echo "if the line says this: /swap.img       none    swap    sw      0       0"
+echo "then you need to go to /etc/fstab and comment it out"
+grep '/swap.img' /etc/fstab
 
 
-# This script checks if /etc/crictl.yaml exists. If it doesn't, the script creates the file with the initial content.
-# If the file exists, it uses sed to insert the lines as you originally intended.
+# Enable IP forwarding
+# echo "Temporarily Enable IP Forwarding:"
+# sudo sysctl -w net.ipv4.ip_forward=1
 
-if [ ! -f /etc/crictl.yaml ]; then
-    echo "File not found, creating..."
-    echo -e "runtime-endpoint: unix:///run/containerd/containerd.sock\nimage-endpoint: unix:///run/containerd/containerd.sock\ntimeout: 10\ndebug: false" | sudo tee /etc/crictl.yaml > /dev/null
-else
-    sudo sed -i '1i runtime-endpoint: unix:///run/containerd/containerd.sock\nimage-endpoint: unix:///run/containerd/containerd.sock\ntimeout: 10\ndebug: false' /etc/crictl.yaml
-fi
+# echo "Persist IP Forwarding Across Reboots:"
+# echo "net.ipv4.ip_forward = 1" | sudo tee -a /etc/sysctl.conf
+
+# echo "Reload the configuration:"
+# sudo sysctl --system
+
+# echo "Verify the setting .... it should equal 1"
+# cat /proc/sys/net/ipv4/ip_forward
+# sysctl params required by setup, params persist across reboots
+cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.ipv4.ip_forward = 1
+EOF
+
+# Apply sysctl params without reboot
+sudo sysctl --system
+
+# Verify that net.ipv4.ip_forward is set to 1 with
+sysctl net.ipv4.ip_forward
+
+# Run the following command to uninstall all conflicting packages:
+for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
 
 
-# Set the sandbox image to the correct Kubernetes image with backup:
-sudo cp /etc/containerd/config.toml /etc/containerd/config.toml.bak
-sudo sed -i 's|sandbox_image = .*|sandbox_image = "registry.k8s.io/pause:3.10"|' /etc/containerd/config.toml
+
+# Setup Docker Apt-Repository for containerD
+# Add Docker's official GPG key:
+sudo apt-get update
+sudo apt-get install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add the repository to Apt sources:
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
 
 
-# STart the containerd
+# Now install only containerD
+sudo apt-get install containerd.io
+
+# Generate the default configuration for containerD
+containerd config default | \
+sed 's/SystemdCgroup = false/SystemdCgroup = true/' | \
+sed 's/sandbox_image = "registry.k8s.io\/pause:3.6"/sandbox_image = "registry.k8s.io\/pause:3.10"/' | \
+sudo tee /etc/containerd/config.toml
+
+# Now restart containerD to ensure it is working
 sudo systemctl restart containerd
+sudo systemctl status containerd
 sudo systemctl enable containerd
 
-# Verify the containerd version and is running
-# sudo systemctl status containerd
+
+# # This script checks if /etc/crictl.yaml exists. If it doesn't, the script creates the file with the initial content.
+# # If the file exists, it uses sed to insert the lines as you originally intended.
+
+# if [ ! -f /etc/crictl.yaml ]; then
+#     echo "File not found, creating..."
+#     echo -e "runtime-endpoint: unix:///run/containerd/containerd.sock\nimage-endpoint: unix:///run/containerd/containerd.sock\ntimeout: 10\ndebug: false" | sudo tee /etc/crictl.yaml > /dev/null
+# else
+#     sudo sed -i '1i runtime-endpoint: unix:///run/containerd/containerd.sock\nimage-endpoint: unix:///run/containerd/containerd.sock\ntimeout: 10\ndebug: false' /etc/crictl.yaml
+# fi
+
+
 
 
 # Add Kubernetes repository
@@ -76,14 +118,7 @@ echo "you should say yes to restarting all services"
 # kubelet --version
 
 
-# Disable swap (Kubernetes requires swap to be off)
-echo "Disabling swap..."
-sudo swapoff -a
-sudo sed -i '/\/swap.img/ s/^/#/' /etc/fstab
-echo "sometimes this does not work and needs manual intervention, see below"
-echo "if the line says this: /swap.img       none    swap    sw      0       0"
-echo "then you need to go to /etc/fstab and comment it out"
-grep '/swap.img' /etc/fstab
+
 
 # Fix any DNS issues that could prevent kublet from working
 # Define the target file
@@ -109,18 +144,7 @@ sudo systemctl restart systemd-resolved
 
 
 
-# Enable IP forwarding
-echo "Temporarily Enable IP Forwarding:"
-sudo sysctl -w net.ipv4.ip_forward=1
 
-echo "Persist IP Forwarding Across Reboots:"
-echo "net.ipv4.ip_forward = 1" | sudo tee -a /etc/sysctl.conf
-
-echo "Reload the configuration:"
-sudo sysctl --system
-
-echo "Verify the setting .... it should equal 1"
-cat /proc/sys/net/ipv4/ip_forward
 
 
 # Pre=pull required images
@@ -151,10 +175,10 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
 
 #################################### YOu need to Reboot cause nothing really will work on the next steps #################
-sudo reboot
+# sudo reboot
 
-# Fixing the kube-system not seeing the needed files
-sudo kubeadm init phase kubelet-start
+# # Fixing the kube-system not seeing the needed files
+# sudo kubeadm init phase kubelet-start
 
 
 
