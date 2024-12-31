@@ -3,6 +3,42 @@
 # Exit immediately if a command fails
 set -e
 
+
+
+# Clean up any malformed installers
+
+# Define the path to the file
+FILE="/etc/apt/sources.list"
+
+# Get current owner and group
+ORIGINAL_OWNER=$(stat -c '%U' "$FILE")
+ORIGINAL_GROUP=$(stat -c '%G' "$FILE")
+ORIGINAL_PERMISSIONS=$(stat -c '%a' "$FILE")
+
+# Save original owner, group, and permissions to a file
+echo "$ORIGINAL_OWNER:$ORIGINAL_GROUP:$ORIGINAL_PERMISSIONS" > /tmp/original_perms.txt
+
+# Take ownership of the file
+sudo chown $USER:$USER "$FILE"
+
+# Comment out the specific line in the file
+sudo sed -i 's/^\(deb \[check-date=no\] file:\/\/\/cdrom.*\)/#\1/' "$FILE"
+
+# Restore the original owner, group, and permissions
+sudo chown "$ORIGINAL_OWNER":"$ORIGINAL_GROUP" "$FILE"
+sudo chmod "$ORIGINAL_PERMISSIONS" "$FILE"
+
+# Update package lists
+sudo apt update
+
+
+
+
+
+
+
+
+
 # Fix any DNS issues that could prevent kublet from working
 # Define the target file
 RESOLV_FILE="/etc/resolv.conf"
