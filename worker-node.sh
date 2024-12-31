@@ -147,14 +147,6 @@ sudo kubeadm config images pull --kubernetes-version=$K8S_VERS
 # sudo kubeadm init --pod-network-cidr=$POD_NETWORK_CIDR --kubernetes-version=$K8S_VER
 # echo "if this fails you can try sudo kubeadm init --pod-network-cidr=$POD_NETWORK_CIDR --kubernetes-version=$K8S_VERSION --ignore-preflight-errors=all"
 
-
-# Set up kubeconfig for the current user
-echo "Setting up kubeconfig..."
-mkdir -p $HOME/.kube
-sudo cp /etc/kubernetes/admin.conf $HOME/.kube/config
-sudo chown $(id -u):$(id -g) $HOME/.kube/config
-
-
 # You can now join worker nodes using a command like this
 # Then you can join any number of worker nodes by running the following on each as root:
 
@@ -179,3 +171,10 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 # Join the cluster
 kubeadm join 172.100.55.20:6443 --token pdgak2.ugmiou5yk80y4xmn \
 	--discovery-token-ca-cert-hash sha256:1fae35e1de806cda88758d375bbb6942857ad882e5149651632771abb3acdeeb 
+
+ 
+# Set up kubeconfig for the current user
+echo "Setting up kubeconfig..."
+mkdir -p $HOME/.kube
+sudo cp /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
