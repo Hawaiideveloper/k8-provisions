@@ -169,6 +169,11 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 # sudo kubeadm init phase kubelet-start
 
 
+# Install Calico
+kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+
+# Restart Kublet to allow Calico to be configured
+sudo systemctl restart kubelet
 
 
 
