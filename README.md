@@ -64,7 +64,9 @@ ssh-keygen -R k8-controlplane
 Reference taken from 1.31 kubeadm within Kubernetes Docs, and ubuntu 22.04.  
 
 ## Note after joining a worker node please be sure to run on the control plane
-kubectl label nodes <k8-worker-node-01 or your workers name> node-role.kubernetes.io/worker-node=worker --overwrite
 
+```bash
+kubectl label nodes <k8-worker-node-01 or your workers name> node-role.kubernetes.io/worker-node=worker --overwrite
+```
 Make sure to substitue your workers name with the actual hostname
 
