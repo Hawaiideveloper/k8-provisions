@@ -3,6 +3,29 @@
 # Exit immediately if a command fails
 set -e
 
+# Fix any DNS issues that could prevent kublet from working
+# Define the target file
+RESOLV_FILE="/etc/resolv.conf"
+
+# Backup the existing resolv.conf file
+if [ -f "$RESOLV_FILE" ]; then
+    cp "$RESOLV_FILE" "${RESOLV_FILE}.backup"
+    echo "Backup created at ${RESOLV_FILE}.backup"
+fi
+
+# Overwrite resolv.conf with new content
+echo "fixing DNS so that kublet will run without issues"
+cat <<EOF > "$RESOLV_FILE"
+nameserver 172.100.55.2
+nameserver 8.8.4.4
+search albrightlabs.local
+EOF
+
+echo "Updated $RESOLV_FILE with new DNS configuration."
+echo "now reloading the dns"
+sudo systemctl restart systemd-resolved
+
+
 # Disable swap (Kubernetes requires swap to be off)
 echo "Disabling swap..."
 sudo swapoff -a
@@ -83,19 +106,26 @@ sudo systemctl enable containerd
 # fi
 
 
+# Instructions are for Kubernetes v1.31
+sudo apt-get update
+# apt-transport-https may be a dummy package; if so, you can skip that package
+sudo apt-get install -y apt-transport-https ca-certificates curl gpg
 
+# Download the public signing key for the Kubernetes package
+# If the directory `/etc/apt/keyrings` does not exist, it should be created before the curl command, read the note below.
+sudo mkdir -p -m 755 /etc/apt/keyrings
 
-# Add Kubernetes repository
-echo "Adding Kubernetes repository..."
-sudo mkdir -p /etc/apt/keyrings
+# This overwrites any existing configuration in /etc/apt/sources.list.d/kubernetes.list
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
 curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
 
 
 # Update and install Kubernetes tools
 echo "Updating and installing Kubernetes tools..."
 sudo apt-get update
-K8S_VERSION="1.31.4-1.1"  # most sable kubernetes version that works wirh calico 
+K8S_VERSION="1.31.4-1.1"  # most stable kubernetes version that works wirh calico 
 sudo apt-get install -y kubelet=$K8S_VERSION kubeadm=$K8S_VERSION kubectl=$K8S_VERSION
 sudo apt-mark hold kubelet kubeadm kubectl
 
@@ -103,48 +133,6 @@ sudo apt-mark hold kubelet kubeadm kubectl
 # We need to restart all services
 sleep 3
 echo "you should say yes to restarting all services"
-
-
-# If we dont get the apt-get to work try this:
-# curl -LO "https://dl.k8s.io/release/v1.31.2/bin/linux/amd64/kubectl"
-# curl -LO "https://dl.k8s.io/release/v1.31.2/bin/linux/amd64/kubeadm"
-# curl -LO "https://dl.k8s.io/release/v1.31.2/bin/linux/amd64/kubelet"
-# chmod +x kubectl kubeadm kubelet
-
-# sudo mv kubectl kubeadm kubelet /usr/local/bin/
-
-# kubectl version --client
-# kubeadm version
-# kubelet --version
-
-
-
-
-# Fix any DNS issues that could prevent kublet from working
-# Define the target file
-RESOLV_FILE="/etc/resolv.conf"
-
-# Backup the existing resolv.conf file
-if [ -f "$RESOLV_FILE" ]; then
-    cp "$RESOLV_FILE" "${RESOLV_FILE}.backup"
-    echo "Backup created at ${RESOLV_FILE}.backup"
-fi
-
-# Overwrite resolv.conf with new content
-echo "fixing DNS so that kublet will run without issues"
-cat <<EOF > "$RESOLV_FILE"
-nameserver 172.100.55.2
-nameserver 8.8.4.4
-search albrightlabs.local
-EOF
-
-echo "Updated $RESOLV_FILE with new DNS configuration."
-echo "now reloading the dns"
-sudo systemctl restart systemd-resolved
-
-
-
-
 
 
 # Pre=pull required images
