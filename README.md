@@ -3,7 +3,7 @@
 
 ### Requirements:  
 
-Minimum 2 Ubuntu Virtual Machines (Preferably 3)  
+Minimum 2 Ubuntu 22.04 Virtual Machines (Preferably 3)  
 
     - Master Node:  
 
@@ -25,7 +25,7 @@ Minimum 2 Ubuntu Virtual Machines (Preferably 3)
         
 
 
-Reference taken from 1.31 kubeadm within Kubernetes Docs, and ubuntu 22.04.  
+Reference taken kubeadm version 1.31 within Kubernetes Documentation
 
 ## Note after joining a worker node please be sure to run on the control plane
 
