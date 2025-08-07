@@ -1,0 +1,185 @@
+name: Hello World Python
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'Name to greet'
+        required: false
+        default: 'World'
+        type: string
+      language:
+        description: 'Programming language'
+        required: false
+        default: 'Python'
+        type: choice
+        options:
+          - 'Python'
+          - 'Bash'
+          - 'JavaScript'
+
+jobs:
+  hello-world:
+    name: Hello World
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Display Python version
+      run: |
+        echo "🐍 Python version:"
+        python --version
+        echo "📦 pip version:"
+        pip --version
+        
+    - name: Hello World in Python
+      run: |
+        echo "🚀 Running Hello World in Python..."
+        python -c "
+        import sys
+        import platform
+        import datetime
+        
+        print('=' * 50)
+        print('🐍 Hello World from Python!')
+        print('=' * 50)
+        print(f'📅 Date: {datetime.datetime.now().strftime(\"%Y-%m-%d %H:%M:%S\")}')
+        print(f'💻 Platform: {platform.platform()}')
+        print(f'🐍 Python Version: {sys.version}')
+        print(f'🏠 Working Directory: {platform.node()}')
+        print('=' * 50)
+        "
+        
+    - name: Run Python script
+      run: |
+        echo "🐍 Running Python script..."
+        if [ -f "hello_world.py" ]; then
+          python hello_world.py
+        else
+          echo "⚠️  hello_world.py not found, skipping script test"
+        fi
+        
+    - name: Hello World with input
+      if: github.event_name == 'workflow_dispatch'
+      run: |
+        echo "👋 Hello ${{ github.event.inputs.name }} from ${{ github.event.inputs.language }}!"
+        echo "🎉 Workflow triggered by: ${{ github.actor }}"
+        echo "📝 Event: ${{ github.event_name }}"
+        
+    - name: Test file operations
+      run: |
+        echo "📁 Testing file operations..."
+        
+        # Create a test file
+        echo "Hello from GitHub Actions!" > test_output.txt
+        echo "Current timestamp: $(date)" >> test_output.txt
+        echo "Python version: $(python --version)" >> test_output.txt
+        
+        # Display file contents
+        echo "📄 File contents:"
+        cat test_output.txt
+        
+        # List current directory
+        echo "📂 Current directory contents:"
+        ls -la
+        
+    - name: Test network connectivity
+      run: |
+        echo "🌐 Testing network connectivity..."
+        
+        # Test DNS resolution
+        echo "🔍 DNS Test:"
+        nslookup github.com
+        
+        # Test HTTP connectivity
+        echo "🌍 HTTP Test:"
+        curl -I https://httpbin.org/get
+        
+        # Test GitHub API
+        echo "📡 GitHub API Test:"
+        curl -s https://api.github.com/zen
+        
+    - name: Environment information
+      run: |
+        echo "🔧 Environment Information:"
+        echo "Runner OS: ${{ runner.os }}"
+        echo "Runner Architecture: ${{ runner.arch }}"
+        echo "GitHub Repository: ${{ github.repository }}"
+        echo "GitHub SHA: ${{ github.sha }}"
+        echo "GitHub Ref: ${{ github.ref }}"
+        echo "GitHub Actor: ${{ github.actor }}"
+        
+    - name: Create artifact
+      run: |
+        echo "📦 Creating test artifact..."
+        
+        # Create a more detailed report
+        cat > workflow_report.txt << EOF
+        ========================================
+        GitHub Actions Hello World Report
+        ========================================
+        Date: $(date)
+        Repository: ${{ github.repository }}
+        Branch: ${{ github.ref }}
+        Commit: ${{ github.sha }}
+        Actor: ${{ github.actor }}
+        Event: ${{ github.event_name }}
+        Runner: ${{ runner.os }} (${{ runner.arch }})
+        Python: $(python --version)
+        ========================================
+        EOF
+        
+        # Add some fun ASCII art
+        cat >> workflow_report.txt << 'EOF'
+        
+        🎉 SUCCESS! 🎉
+        
+        ╔══════════════════════════════════════╗
+        ║     GitHub Actions is working!       ║
+        ║                                      ║
+        ║  ✅ Python environment ready         ║
+        ║  ✅ File operations working          ║
+        ║  ✅ Network connectivity OK          ║
+        ║  ✅ Environment variables set        ║
+        ╚══════════════════════════════════════╝
+        EOF
+        
+        echo "📄 Report contents:"
+        cat workflow_report.txt
+        
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: hello-world-report
+        path: |
+          test_output.txt
+          workflow_report.txt
+        retention-days: 7
+        
+    - name: Success message
+      run: |
+        echo ""
+        echo "🎉 🎉 🎉 SUCCESS! 🎉 🎉 🎉"
+        echo ""
+        echo "✅ Hello World workflow completed successfully!"
+        echo "✅ Python environment is working"
+        echo "✅ File operations are working"
+        echo "✅ Network connectivity is working"
+        echo "✅ GitHub Actions integration is working"
+        echo ""
+        echo "📦 Artifacts have been uploaded"
+        echo "📄 Check the Actions tab to download the report"
+        echo ""
+        echo "🚀 Ready to deploy more complex workflows!"
+        echo "" 
