@@ -1,0 +1,281 @@
+name: Kubernetes Cluster Setup
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'master-workflow.sh'
+      - 'worker-workflow.sh'
+      - '.github/workflows/k8s-cluster-setup.yml'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'master-workflow.sh'
+      - 'worker-workflow.sh'
+      - '.github/workflows/k8s-cluster-setup.yml'
+  workflow_dispatch:
+    inputs:
+      cluster_size:
+        description: 'Number of worker nodes (1-5)'
+        required: true
+        default: '2'
+        type: choice
+        options:
+          - '1'
+          - '2'
+          - '3'
+          - '4'
+          - '5'
+      test_mode:
+        description: 'Run in test mode (simulate setup)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  MASTER_IP: "172.100.10.10"
+  WORKER_IP_PREFIX: "172.100.10"
+  POD_NETWORK_CIDR: "192.168.79.0/24"
+  K8S_VERSION: "1.31.4-1.1"
+
+jobs:
+  validate-scripts:
+    name: Validate Scripts
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Validate master workflow script
+      run: |
+        echo "Validating master-workflow.sh..."
+        if [ ! -f "master-workflow.sh" ]; then
+          echo "❌ master-workflow.sh not found"
+          exit 1
+        fi
+        
+        if [ ! -x "master-workflow.sh" ]; then
+          echo "❌ master-workflow.sh is not executable"
+          exit 1
+        fi
+        
+        # Check for required sections
+        if ! grep -q "MASTER_IP=" master-workflow.sh; then
+          echo "❌ MASTER_IP not found in master-workflow.sh"
+          exit 1
+        fi
+        
+        if ! grep -q "kubeadm init" master-workflow.sh; then
+          echo "❌ kubeadm init not found in master-workflow.sh"
+          exit 1
+        fi
+        
+        echo "✅ master-workflow.sh validation passed"
+        
+    - name: Validate worker workflow script
+      run: |
+        echo "Validating worker-workflow.sh..."
+        if [ ! -f "worker-workflow.sh" ]; then
+          echo "❌ worker-workflow.sh not found"
+          exit 1
+        fi
+        
+        if [ ! -x "worker-workflow.sh" ]; then
+          echo "❌ worker-workflow.sh is not executable"
+          exit 1
+        fi
+        
+        # Check for required sections
+        if ! grep -q "MASTER_IP=" worker-workflow.sh; then
+          echo "❌ MASTER_IP not found in worker-workflow.sh"
+          exit 1
+        fi
+        
+        if ! grep -q "kubeadm join" worker-workflow.sh; then
+          echo "❌ kubeadm join not found in worker-workflow.sh"
+          exit 1
+        fi
+        
+        echo "✅ worker-workflow.sh validation passed"
+
+  syntax-check:
+    name: Syntax Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install shellcheck
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y shellcheck
+        
+    - name: Check master workflow syntax
+      run: |
+        echo "Checking syntax of master-workflow.sh..."
+        shellcheck master-workflow.sh || {
+          echo "❌ Syntax errors found in master-workflow.sh"
+          exit 1
+        }
+        echo "✅ master-workflow.sh syntax is valid"
+        
+    - name: Check worker workflow syntax
+      run: |
+        echo "Checking syntax of worker-workflow.sh..."
+        shellcheck worker-workflow.sh || {
+          echo "❌ Syntax errors found in worker-workflow.sh"
+          exit 1
+        }
+        echo "✅ worker-workflow.sh syntax is valid"
+
+  documentation-check:
+    name: Documentation Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Check README exists
+      run: |
+        if [ ! -f "WORKFLOW_README.md" ]; then
+          echo "❌ WORKFLOW_README.md not found"
+          exit 1
+        fi
+        echo "✅ WORKFLOW_README.md exists"
+        
+    - name: Validate README content
+      run: |
+        echo "Checking README content..."
+        
+        # Check for required sections
+        required_sections=("Network Configuration" "Quick Start" "Prerequisites" "Troubleshooting")
+        
+        for section in "${required_sections[@]}"; do
+          if ! grep -q "$section" WORKFLOW_README.md; then
+            echo "❌ Required section '$section' not found in README"
+            exit 1
+          fi
+        done
+        
+        echo "✅ README content validation passed"
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run security scan
+      run: |
+        echo "Performing security scan of scripts..."
+        
+        # Check for hardcoded credentials
+        if grep -r "password\|secret\|key" master-workflow.sh worker-workflow.sh | grep -v "echo\|comment"; then
+          echo "⚠️  Potential hardcoded credentials found"
+        fi
+        
+        # Check for dangerous commands
+        dangerous_patterns=("rm -rf /" "format" "dd if=" "mkfs")
+        
+        for pattern in "${dangerous_patterns[@]}"; do
+          if grep -r "$pattern" master-workflow.sh worker-workflow.sh; then
+            echo "⚠️  Potentially dangerous command found: $pattern"
+          fi
+        done
+        
+        echo "✅ Security scan completed"
+
+  test-deployment:
+    name: Test Deployment (Simulated)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.test_mode == 'true'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Simulate master node setup
+      run: |
+        echo "🧪 Simulating master node setup..."
+        echo "📋 Steps that would be executed:"
+        echo "  1. Configure network interface for 172.100.10.10"
+        echo "  2. Set hostname to k8-master"
+        echo "  3. Install containerd"
+        echo "  4. Install Kubernetes components"
+        echo "  5. Initialize control plane"
+        echo "  6. Install Calico CNI"
+        echo "  7. Generate join command"
+        echo ""
+        echo "✅ Master node simulation completed"
+        
+    - name: Simulate worker node setup
+      run: |
+        echo "🧪 Simulating worker node setup..."
+        WORKER_COUNT=${{ github.event.inputs.cluster_size }}
+        
+        for i in $(seq 1 $WORKER_COUNT); do
+          WORKER_IP="172.100.10.$((10 + i))"
+          WORKER_HOSTNAME="k8-worker-0$i"
+          
+          echo "📋 Worker $i ($WORKER_HOSTNAME - $WORKER_IP):"
+          echo "  1. Configure network interface for $WORKER_IP"
+          echo "  2. Set hostname to $WORKER_HOSTNAME"
+          echo "  3. Install containerd"
+          echo "  4. Install Kubernetes components"
+          echo "  5. Join cluster"
+          echo ""
+        done
+        
+        echo "✅ Worker nodes simulation completed"
+        
+    - name: Generate test report
+      run: |
+        echo "📊 Test Deployment Report"
+        echo "========================"
+        echo "Cluster Size: ${{ github.event.inputs.cluster_size }} worker nodes"
+        echo "Master IP: ${{ env.MASTER_IP }}"
+        echo "Pod Network: ${{ env.POD_NETWORK_CIDR }}"
+        echo "Kubernetes Version: ${{ env.K8S_VERSION }}"
+        echo ""
+        echo "Network Configuration:"
+        echo "- Master: ${{ env.MASTER_IP }}"
+        for i in $(seq 1 ${{ github.event.inputs.cluster_size }}); do
+          echo "- Worker $i: ${{ env.WORKER_IP_PREFIX }}.$((10 + i))"
+        done
+        echo ""
+        echo "✅ Test deployment report generated"
+
+  build-package:
+    name: Build Package
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    needs: [validate-scripts, syntax-check, documentation-check, security-scan]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Create deployment package
+      run: |
+        echo "Creating deployment package..."
+        
+        # Create package directory
+        mkdir -p k8s-cluster-setup
+        cp master-workflow.sh worker-workflow.sh WORKFLOW_README.md k8s-cluster-setup/
+        
+        # Create archive
+        tar -czf k8s-cluster-setup.tar.gz k8s-cluster-setup/
+        
+        echo "✅ Deployment package created: k8s-cluster-setup.tar.gz"
+        
+    - name: Upload package as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: k8s-cluster-setup-package
+        path: k8s-cluster-setup.tar.gz
+        retention-days: 30 
