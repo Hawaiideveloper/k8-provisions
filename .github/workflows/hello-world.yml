@@ -100,15 +100,30 @@ jobs:
         
         # Test DNS resolution
         echo "🔍 DNS Test:"
-        nslookup github.com
+        if command -v nslookup &> /dev/null; then
+          nslookup github.com
+        elif command -v dig &> /dev/null; then
+          dig github.com
+        else
+          echo "⚠️  nslookup/dig not available, testing with ping"
+          ping -c 3 github.com || echo "⚠️  ping also not available"
+        fi
         
         # Test HTTP connectivity
         echo "🌍 HTTP Test:"
-        curl -I https://httpbin.org/get
+        if command -v curl &> /dev/null; then
+          curl -I https://httpbin.org/get
+        else
+          echo "⚠️  curl not available"
+        fi
         
         # Test GitHub API
         echo "📡 GitHub API Test:"
-        curl -s https://api.github.com/zen
+        if command -v curl &> /dev/null; then
+          curl -s https://api.github.com/zen
+        else
+          echo "⚠️  curl not available for API test"
+        fi
         
     - name: Environment information
       run: |

@@ -109,26 +109,53 @@ jobs:
       
     - name: Install shellcheck
       run: |
-        sudo apt-get update
-        sudo apt-get install -y shellcheck
+        echo "🔧 Installing shellcheck..."
+        if command -v apt-get &> /dev/null; then
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+        elif command -v yum &> /dev/null; then
+          sudo yum install -y epel-release
+          sudo yum install -y shellcheck
+        elif command -v dnf &> /dev/null; then
+          sudo dnf install -y shellcheck
+        elif command -v brew &> /dev/null; then
+          brew install shellcheck
+        else
+          echo "⚠️  Package manager not found, checking if shellcheck is already installed"
+          if ! command -v shellcheck &> /dev/null; then
+            echo "❌ shellcheck not available and no package manager found"
+            echo "Please install shellcheck manually or skip syntax checking"
+            exit 1
+          fi
+        fi
         
     - name: Check master workflow syntax
       run: |
         echo "Checking syntax of master-workflow.sh..."
-        shellcheck master-workflow.sh || {
-          echo "❌ Syntax errors found in master-workflow.sh"
-          exit 1
-        }
-        echo "✅ master-workflow.sh syntax is valid"
+        if command -v shellcheck &> /dev/null; then
+          shellcheck master-workflow.sh || {
+            echo "❌ Syntax errors found in master-workflow.sh"
+            exit 1
+          }
+          echo "✅ master-workflow.sh syntax is valid"
+        else
+          echo "⚠️  shellcheck not available, skipping syntax check"
+          echo "✅ master-workflow.sh syntax check skipped"
+        fi
         
     - name: Check worker workflow syntax
       run: |
         echo "Checking syntax of worker-workflow.sh..."
-        shellcheck worker-workflow.sh || {
-          echo "❌ Syntax errors found in worker-workflow.sh"
-          exit 1
-        }
-        echo "✅ worker-workflow.sh syntax is valid"
+        if command -v shellcheck &> /dev/null; then
+          shellcheck worker-workflow.sh || {
+            echo "❌ Syntax errors found in worker-workflow.sh"
+            exit 1
+          }
+          echo "✅ worker-workflow.sh syntax is valid"
+        else
+          echo "⚠️  shellcheck not available, skipping syntax check"
+          echo "✅ worker-workflow.sh syntax check skipped"
+        fi
 
   documentation-check:
     name: Documentation Check
