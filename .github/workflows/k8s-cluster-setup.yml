@@ -274,7 +274,7 @@ jobs:
         echo "✅ Deployment package created: k8s-cluster-setup.tar.gz"
         
     - name: Upload package as artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: k8s-cluster-setup-package
         path: k8s-cluster-setup.tar.gz

@@ -159,7 +159,7 @@ jobs:
         cat workflow_report.txt
         
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: hello-world-report
         path: |
