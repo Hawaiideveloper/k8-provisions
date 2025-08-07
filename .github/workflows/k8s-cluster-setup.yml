@@ -41,7 +41,7 @@ env:
 jobs:
   validate-scripts:
     name: Validate Scripts
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     
     steps:
     - name: Checkout code
@@ -101,7 +101,7 @@ jobs:
 
   syntax-check:
     name: Syntax Check
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     
     steps:
     - name: Checkout code
@@ -132,7 +132,7 @@ jobs:
 
   documentation-check:
     name: Documentation Check
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     
     steps:
     - name: Checkout code
@@ -164,7 +164,7 @@ jobs:
 
   security-scan:
     name: Security Scan
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     
     steps:
     - name: Checkout code
@@ -192,7 +192,7 @@ jobs:
 
   test-deployment:
     name: Test Deployment (Simulated)
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.test_mode == 'true'
     
     steps:
@@ -252,7 +252,7 @@ jobs:
 
   build-package:
     name: Build Package
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     needs: [validate-scripts, syntax-check, documentation-check, security-scan]
     
