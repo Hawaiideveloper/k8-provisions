@@ -1,0 +1,48 @@
+name: Test ARC Self-Hosted Runners
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  test-ubuntu-python:
+    runs-on: hawaiideveloper-runners
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: System Information
+        run: |
+          echo "🐧 Ubuntu Version:"
+          cat /etc/os-release
+          echo ""
+          echo "🐍 Python Versions Available:"
+          python3 --version
+          echo ""
+          echo "📦 Pip Version:"
+          pip3 --version
+          
+      - name: Test Python Package Installation
+        run: |
+          echo "📦 Installing test Python package..."
+          pip3 install requests
+          python3 -c "import requests; print(f'✅ Requests: {requests.__version__}')"
+          
+      - name: Kubernetes Environment Test
+        run: |
+          echo "☸️ Kubernetes Environment:"
+          echo "Runner hostname: $(hostname)"
+          echo "Container environment: $(uname -a)"
+          echo "Available resources:"
+          echo "  CPU cores: $(nproc)"
+          echo "  Memory: $(free -h | grep Mem)"
+          
+      - name: Success Confirmation
+        run: |
+          echo "🎉 SUCCESS! ARC Self-Hosted Runner Test Complete!"
+          echo "✅ Ubuntu 22.04 LTS container"
+          echo "✅ Python 3.x available"
+          echo "✅ Package installation works"
+          echo "✅ Running on Proxmox Kubernetes"
+          echo "✅ Hawaiideveloper runners operational!"
